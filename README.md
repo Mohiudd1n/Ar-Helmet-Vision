@@ -1,105 +1,86 @@
-# 🪖 AR Helmet Vision — Web-Based 3D Virtual Helmet Try-On
+# 🪖 AR Helmet Vision — Virtual Helmet Try-On
 
-An interactive, production-ready **Web-Based Augmented Reality (AR) Virtual Helmet Try-On Application** built with **Vite, React, Three.js, and Google MediaPipe Face Landmarker**.
+Try real branded helmets on your own head through the front camera. The project ships as two apps
+that share the same 3D models and the same calibrated fits:
 
-Live front-camera feed renders rigid `.glb` 3D helmet models anchored to the user's head with **pixel-accurate 3D occlusion** using a real-time, adaptive 478-landmark facial mesh so your real face, eyes, and mouth show naturally through the helmet visor opening.
+| | Web app (this folder) | Unity app (`unity/ARHelmetVision`) |
+|---|---|---|
+| Runs on | Any phone or desktop browser | Native Android (ARCore) / iOS (ARKit) |
+| Tech | React 18 · Vite 5 · Three.js · MediaPipe Face Landmarker · Tailwind | Unity 6 · AR Foundation 6 · glTFast · uGUI |
+| Status | Built and tested | Written, not yet compiled (needs the Unity Editor). See its README |
 
----
+## Screens
 
-## ✨ Features
+1. **Welcome**: greets the user by time of day, with an optional saved name and a spinning 3D helmet.
+2. **Catalog**: 4 brands of real helmet models (Axor, Scorpion, Elementza, Vertigo) as live 3D
+   turntables, with brand filters. Tap a helmet to try it on.
+3. **AR Try-On**: the helmet tracks your head with a face-mesh overlay that stays visible at every
+   angle. It has S–XL sizes, visor modes (smoked / up / tinted), a helmet switcher, photo capture and model credits.
 
-- **Adaptive 478-Landmark Real-Time Face Mesh:** Uses Google MediaPipe's `FACE_LANDMARKS_TESSELATION` (852 triangles). The mesh dynamically reacts to smiles, lip movements, cheek flexing, and jaw opening.
-- **Dynamic Head & Cranium Occlusion:** Extruded 36-point contour derived directly from your live `FACE_LANDMARKS_FACE_OVAL` to occlude the interior cavity of the helmet without using static sphere geometries.
-- **Automatic Biometric Head Sizing:** Automatically measures temple-to-temple face width (landmarks 234 to 454) in centimeters and normalizes any `.glb` model to match your facial scale.
-- **PBR Studio Lighting & Reflections:** Three.js `ACESFilmicToneMapping`, `SRGBColorSpace`, and `RoomEnvironment` through `PMREMGenerator` for realistic metallic reflections and semi-transparent visors.
-- **Full Mobile Compatibility (iOS Safari & Android Chrome):**
-  - Multi-tier `getUserMedia` constraint fallback progression (portrait, landscape, relaxed, generic).
-  - Built-in HTTPS development server via `@vitejs/plugin-basic-ssl` (required by mobile browsers to access camera hardware).
-  - Autoplay handling with fallback "Tap to Enable Camera" overlay.
-  - Video inline playback (`playsInline`, `webkit-playsinline`, `muted`).
-- **Composite AR Snapshot:** Captures high-res selfie photos combining the mirrored camera feed and 3D WebGL render into a downloadable PNG.
-- **Zero-Crash Procedural Fallback:** If a `.glb` model is missing or fails to load, generates a procedural PBR helmet shell with visor and padding.
-- **Interactive Calibration Drawer:** Real-time sliders for scale, X/Y/Z offsets, Euler pitch/yaw/roll, and a "Copy Config JSON" utility.
+## Tech stack
 
----
+- **Web**: React 18, Vite 5, Three.js r165 (GLTFLoader, PBR, RoomEnvironment), `@mediapipe/tasks-vision` Face Landmarker, Tailwind CSS, lucide-react
+- **Native**: Unity 6, AR Foundation 6 (ARCore Augmented Faces / ARKit face tracking), glTFast, Input System, uGUI
 
-## 🛠️ Tech Stack
+## Quick start (web)
 
-- **Frontend:** React 18 + Vite 5
-- **3D Graphics & WebGL:** Three.js (r165+) + `GLTFLoader` + `RoomEnvironment`
-- **Computer Vision & Face Tracking:** `@mediapipe/tasks-vision`
-- **Styling:** Tailwind CSS + Lucide React Icons
-- **Local HTTPS:** `@vitejs/plugin-basic-ssl`
-
----
-
-## 🚀 Quick Start
-
-### 1. Clone the repository:
-```bash
-git clone https://github.com/Mohiudd1n/Ar-Helmet-Vision.git
-cd Ar-Helmet-Vision
-```
-
-### 2. Install dependencies:
 ```bash
 npm install
-```
-
-### 3. Run development server:
-```bash
-npm run dev
-```
-
-Vite will serve the app over HTTPS:
-- **Local:** `https://localhost:3000/`
-- **Network (Mobile):** `https://<YOUR_LOCAL_IP>:3000/`
-
----
-
-## 📱 Mobile Testing Instructions
-
-1. Ensure your smartphone and development computer are connected to the **same Wi-Fi network**.
-2. Open the **Network HTTPS link** displayed in the terminal (e.g., `https://192.168.x.x:3000`) on your mobile browser (Safari on iOS or Chrome on Android).
-3. **Certificate Notice:** Because development uses a self-signed local SSL certificate, your browser may show a *"Your connection is not private"* warning:
-   - On iOS Safari: Tap **Show Details** ➔ **visit this website**.
-   - On Android Chrome: Tap **Advanced** ➔ **Proceed to site (unsafe)**.
-4. Allow front camera permissions when prompted.
-
----
-
-## 📁 Adding Custom 3D Helmet Models
-
-1. Download or export any helmet model in `.glb` or `.gltf` format (e.g. from Sketchfab, Blender).
-2. Place the file inside the `public/models/` folder:
-   ```
-   public/models/helmet1.glb
-   public/models/helmet2.glb
-   ```
-3. Update or adjust offsets in `src/data/helmets.js` if needed:
-   ```javascript
-   {
-     id: "helmet-1",
-     name: "Custom Racing Helmet",
-     modelUrl: "/models/helmet1.glb",
-     scale: 1.0,
-     offset: { x: 0.0, y: 1.2, z: -1.2 },
-     rotationOffset: { x: 0.0, y: 0.0, z: 0.0 }
-   }
-   ```
-4. Open the **Fine-Tune 3D Fit** drawer (sliders icon) in the app to adjust calibration in real time, then click **Copy Config JSON**.
-
----
-
-## 📦 Building for Production
-
-```bash
+npm run dev        # HTTPS on :3000, reachable from phones on the same Wi-Fi
+npm run dev:local  # plain HTTP on localhost:3001 (desktop testing; localhost counts as secure)
 npm run build
 ```
-Production assets are generated in the `dist/` directory.
 
----
+On a phone, open the `https://<your-LAN-IP>:3000` address Vite prints, accept the self-signed
+certificate warning, and allow camera access.
 
-## 📄 License
+**Test without a camera:** add `?src=/path/to/face.jpg` (or `.mp4`) before the `#`, e.g.
+`http://localhost:3001/?src=/__test__/portrait.jpg#/try/axor-mx-carbon`. Put test media in
+`public/__test__/`, which git ignores.
 
-MIT License. Free for personal and commercial AR experimentation.
+## How the AR works (web)
+
+- **Pose**: MediaPipe returns a rigid 4×4 head pose of its canonical face model, in centimetres, for a camera
+  with a 63° vertical field of view. The Three.js camera uses exactly that FOV and the video's aspect
+  ratio, and the canvas is laid out at exactly the video's size and position, so a helmet placed in
+  canonical head space lands on the real head with no guessed depth or scale. (`src/lib/arEngine.js`)
+- **Smoothing**: a One Euro filter on position and rotation removes jitter without adding lag when you move. (`src/lib/oneEuroFilter.js`)
+- **Occlusion**: a depth-only head made of the canonical face (eye and mouth holes closed), a skull
+  ellipsoid and a neck rides on the same anchor as the helmet. Helmet parts behind your real head
+  are hidden, so you see your face through the eye port. The chin bar, visor and peak stay in front. (`src/lib/headOccluder.js`)
+- **Face mesh overlay**: built from the live 478 landmarks every frame and drawn on top of everything. Tracking
+  thresholds are lowered and a short pose hold covers brief dropouts, so it stays visible when you turn
+  sideways or look up or down.
+- **Fitting**: each helmet's `fit` (rotation, shell width in cm, centre in cm) in `src/data/helmets.js` maps the
+  raw `.glb` into head space. Tune it visually in the **Fit Studio** at `#/studio/<helmet-id>`.
+- **Lighting**: tone-mapping exposure follows the camera image's brightness, so the helmet matches the room.
+
+## Project layout
+
+```
+public/models/            real helmet .glb files (Sketchfab, see credits)
+scripts/copy-mediapipe.mjs   copies the matching MediaPipe WASM into public/ (runs before dev/build)
+src/App.jsx               hash router: #/  #/catalog  #/try/<id>  #/studio/<id>
+src/screens/              WelcomeScreen, CatalogScreen, TryOnScreen, FitStudio
+src/components/HelmetPreview.jsx   live 3D turntables + thumbnails (one shared WebGL context)
+src/lib/                  arEngine, helmetLoader, headOccluder, faceTopology, canonicalFace, oneEuroFilter, camera
+src/data/helmets.js       catalog + calibrated fits
+unity/ARHelmetVision/     Unity 6 AR Foundation app (see its README)
+```
+
+## Adding a helmet
+
+1. Put the `.glb` in `public/models/`.
+2. Add an entry to `src/data/helmets.js` with a rough `fit`.
+3. Open `#/studio/<id>`, use the Front/Side views with X-ray on, adjust rotation, width and centre until the
+   canonical head sits inside the shell with the eyes in the eye port, then copy the JSON into the entry.
+4. If the visor is a separate mesh, list its mesh names in `visor.meshes`.
+
+## Model credits
+
+- Scorpion EXO-Combat by Marcin.Adamski, CC BY 4.0
+- Axor MX Carbon by PEKUKEY, Sketchfab Standard licence
+- Elementza helmet by BasedOptimal, CC BY 4.0
+- Vertigo moto helmet by Aleksandr Sagidullin, CC BY 4.0
+
+Links are in `src/data/helmets.js`, and the app shows the credits on the catalog cards and in the try-on info panel.

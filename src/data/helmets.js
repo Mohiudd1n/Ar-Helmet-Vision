@@ -1,77 +1,89 @@
 /**
- * Multi-Helmet Configuration Catalog
- * 
- * Each entry provides model URLs and default calibration parameters:
- * - scale: Multiplier applied on top of the auto-calculated biometric face fit
- * - offset: { x, y, z } translation offset from head anchor origin (in centimeters)
- * - rotationOffset: { x, y, z } Euler rotation offset in radians
- * - Procedural styling values used if .glb is missing or fails to fetch
+ * Helmet catalog: real, artist-made 3D models of branded helmets (from Sketchfab).
+ *
+ * `fit` maps the raw .glb into head space (MediaPipe canonical face frame, cm):
+ *   rotation  Euler radians that turn the model so its front faces +Z and top faces +Y
+ *   width     outer shell width in cm (sets the uniform scale)
+ *   center    where the centre of the model's bounding box sits relative to the head
+ * Calibrated visually in the Fit Studio (#/studio/<id>) against the canonical head.
+ *
+ * `visor.meshes` names the visor meshes so the try-on can show them smoked or flipped up.
+ * Licences: CC BY 4.0 models must show the credit (the catalog and try-on screens do).
  */
 
-export const INITIAL_HELMETS = [
+export const HELMETS = [
   {
-    id: "helmet-1",
-    name: "Carbon Racing Full-Face",
-    badge: "Track Edition",
-    thumbnailColor: "#ef4444",
-    modelUrl: "/models/helmet1.glb",
-    scale: 1.0,
-    offset: { x: 0.0, y: 0.0, z: 0.0 },
-    // Rotate 180° (Math.PI) around Y so visor faces forward (+Z), plus slight pitch level
-    rotationOffset: { x: 0.15, y: Math.PI, z: 0.0 },
-    // Procedural Fallback Style
-    type: "full-face",
-    shellColor: "#17171a",
-    accentColor: "#ef4444",
-    visorTint: "#38bdf8",
-    description: "Aerodynamic carbon fiber weave with high-speed stability spoiler & smoke anti-fog visor."
+    id: 'axor-mx-carbon',
+    brand: 'Axor',
+    model: 'MX Carbon',
+    category: 'Motocross',
+    tagline: 'Carbon off-road helmet with peak and wide goggle port',
+    features: ['Carbon-fibre shell', 'Adjustable peak', 'Goggle-ready eye port'],
+    accent: '#f59e0b',
+    modelUrl: '/models/helmet3.glb',
+    sizeMb: 27.7,
+    fit: { rotation: [0, 0, 0], width: 27, center: [0, 1.5, -2.5] },
+    visor: null,
+    credit: {
+      author: 'PEKUKEY',
+      url: 'https://sketchfab.com/3d-models/axor-mx-carbon-helmet-0a2432f2c1ec419e84e39678cfa4fcb8',
+      license: 'Sketchfab Standard',
+    },
   },
   {
-    id: "helmet-2",
-    name: "Matte Black Street",
-    badge: "Urban Stealth",
-    thumbnailColor: "#374151",
-    modelUrl: "/models/helmet2.glb",
-    scale: 1.0,
-    offset: { x: 0.0, y: 0.0, z: 0.0 },
-    rotationOffset: { x: 0.0, y: 0.0, z: 0.0 },
-    // Procedural Fallback Style
-    type: "street",
-    shellColor: "#222226",
-    accentColor: "#f59e0b",
-    visorTint: "#1e293b",
-    description: "Stealth matte finish with reinforced chin bar and dual top ventilation channels."
+    id: 'scorpion-exo-combat',
+    brand: 'Scorpion',
+    model: 'EXO-Combat',
+    category: 'Convertible Street',
+    tagline: 'Open-face shell with a removable face mask and tinted shield',
+    features: ['Removable face mask', 'Tinted face shield', 'Polycarbonate shell'],
+    accent: '#ef4444',
+    modelUrl: '/models/helmet1.glb',
+    sizeMb: 21.4,
+    fit: { rotation: [0, Math.PI, 0], width: 26, center: [0, 2, -4.5] },
+    visor: { meshes: ['maska_maska_0', 'maska_maska_0_1'], tint: '#111111' },
+    credit: {
+      author: 'Marcin.Adamski',
+      url: 'https://sketchfab.com/3d-models/scorpion-exo-combat-8eae9a2c17324592bad0133821c2b92a',
+      license: 'CC BY 4.0',
+    },
   },
   {
-    id: "helmet-3",
-    name: "Retro Classic Open-Face",
-    badge: "Cafe Racer",
-    thumbnailColor: "#d97706",
-    modelUrl: "/models/helmet3.glb",
-    scale: 1.0,
-    offset: { x: 0.0, y: 0.5, z: 0.0 },
-    rotationOffset: { x: 0.04, y: 0.0, z: 0.0 },
-    // Procedural Fallback Style
-    type: "open-face",
-    shellColor: "#ede8df",
-    accentColor: "#b45309",
-    visorTint: "#f59e0b",
-    description: "Vintage cafe-racer open-face helmet with chrome rim lining and flip-up bubble visor."
+    id: 'elementza-full-face',
+    brand: 'Elementza',
+    model: 'Racer Full-Face',
+    category: 'Full-Face Sport',
+    tagline: 'Glossy full-face road helmet with a smoked visor',
+    features: ['Full-face protection', 'Smoked flip-up visor', 'Aerodynamic shell'],
+    accent: '#dc2626',
+    modelUrl: '/models/helmet4.glb',
+    sizeMb: 4.0,
+    fit: { rotation: [0, 0, 0], width: 25, center: [0, -0.3, -2.5] },
+    visor: { meshes: ['polySurface4_blinn2_0'], tint: '#0b0b0b' },
+    credit: {
+      author: 'BasedOptimal',
+      url: 'https://sketchfab.com/3d-models/elementza-bike-helmet-02cc6c3b10d14048b06a518bb6870c40',
+      license: 'CC BY 4.0',
+    },
   },
   {
-    id: "helmet-4",
-    name: "Cyber Neon Sport",
-    badge: "Pro Series",
-    thumbnailColor: "#06b6d4",
-    modelUrl: "/models/helmet4.glb",
-    scale: 1.0,
-    offset: { x: 0.0, y: 0.0, z: 0.0 },
-    rotationOffset: { x: 0.0, y: 0.0, z: 0.0 },
-    // Procedural Fallback Style
-    type: "neon-sport",
-    shellColor: "#0b1329",
-    accentColor: "#06b6d4",
-    visorTint: "#a855f7",
-    description: "Futuristic race spec with iridescent photochromic visor and electric cyan accents."
-  }
+    id: 'vertigo-jet',
+    brand: 'Vertigo',
+    model: 'Classic Jet',
+    category: 'Open-Face Retro',
+    tagline: 'Leather-look open-face helmet for city and café-racer rides',
+    features: ['Open-face jet design', 'Snap visor studs', 'Padded chin strap'],
+    accent: '#a3a3a3',
+    modelUrl: '/models/helmet2.glb',
+    sizeMb: 4.7,
+    fit: { rotation: [0, 0, 0], width: 25, center: [0, -2.3, -5] },
+    visor: null,
+    credit: {
+      author: 'Aleksandr Sagidullin',
+      url: 'https://sketchfab.com/3d-models/moto-helmet-with-vertigo-logo-cc2d7c15d4484363bbc1f9c2000799ec',
+      license: 'CC BY 4.0',
+    },
+  },
 ];
+
+export const getHelmet = (id) => HELMETS.find((h) => h.id === id);

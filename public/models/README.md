@@ -1,12 +1,14 @@
-# 3D Helmet Models Directory
+# Helmet models
 
-Place your `.glb` or `.gltf` 3D helmet models in this folder:
+Real helmet models downloaded from Sketchfab (credits in `src/data/helmets.js` and the main README):
 
-- `helmet1.glb` -> Carbon Racing Full-Face
-- `helmet2.glb` -> Matte Black Street
-- `helmet3.glb` -> Retro Classic Open-Face
-- `helmet4.glb` -> Cyber Neon Sport
+| File | Helmet | Licence |
+|---|---|---|
+| `helmet1.glb` | Scorpion EXO-Combat | CC BY 4.0 |
+| `helmet2.glb` | Vertigo Classic Jet | CC BY 4.0 |
+| `helmet3.glb` | Axor MX Carbon | Sketchfab Standard |
+| `helmet4.glb` | Elementza Racer Full-Face | CC BY 4.0 |
 
-### Notes:
-- If a `.glb` file is not present, the app will automatically generate and display a procedural 3D helmet with custom PBR shading, tinted visors, and occlusion.
-- You can find free motorcycle, racing, and tactical helmets on [Sketchfab](https://sketchfab.com/3d-models?features=downloadable&sort_by=-likeCount&type=models). When downloading, choose the `.glb` (gITF binary) format.
+To add one, drop a `.glb` here, add it to `src/data/helmets.js`, and calibrate its fit in the
+Fit Studio (`#/studio/<id>`). The Unity app copies these files in via
+*Tools ▸ AR Helmet Vision ▸ Import Helmet Models*.

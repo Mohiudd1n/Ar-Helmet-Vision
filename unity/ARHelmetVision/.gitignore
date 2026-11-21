@@ -1,0 +1,14 @@
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+*.csproj
+*.sln
+*.userprefs
+# Helmet models are copied in from ../../public/models by the setup menu
+Assets/ARHelmetVision/Models/
+Assets/ARHelmetVision/Models.meta

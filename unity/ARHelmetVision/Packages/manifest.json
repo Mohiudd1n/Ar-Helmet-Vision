@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "com.unity.cloud.gltfast": "6.0.1",
+    "com.unity.inputsystem": "1.7.0",
+    "com.unity.ugui": "2.0.0",
+    "com.unity.xr.arcore": "6.0.3",
+    "com.unity.xr.arfoundation": "6.0.3",
+    "com.unity.xr.arkit": "6.0.3",
+    "com.unity.xr.management": "4.4.0",
+    "com.unity.modules.imageconversion": "1.0.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.uielements": "1.0.0",
+    "com.unity.modules.unitywebrequest": "1.0.0"
+  }
+}
