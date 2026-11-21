@@ -25,7 +25,7 @@ import {
 import { INITIAL_HELMETS } from '../data/helmets.js';
 import { createProceduralHelmet } from '../utils/proceduralHelmet.js';
 
-// 36 Perimeter Landmark Indices tracing the boundary of the face oval in order
+// 36 Perimeter Landmark Indices tracing the outer boundary of the face oval in order
 const FACE_OVAL_RING = [
   10, 338, 297, 332, 284, 251, 389, 356,
   454, 323, 361, 288, 397, 365, 379, 378,
@@ -33,6 +33,75 @@ const FACE_OVAL_RING = [
   172, 58, 132, 93, 234, 127, 162, 21,
   54, 103, 67, 109
 ];
+
+// Clean stylized low-density facial triangulation matching the reference photo
+const STYLIZED_FACIAL_TRIANGLES = [
+  // Forehead apex fan
+  [10, 67, 109], [10, 109, 107], [10, 107, 9], [10, 9, 336], [10, 336, 338], [10, 338, 297],
+  [109, 54, 103], [109, 103, 67], [338, 284, 297], [297, 332, 284],
+  // Forehead to eyebrows
+  [107, 66, 9], [9, 66, 8], [9, 8, 296], [9, 296, 336],
+  [107, 105, 66], [336, 296, 334],
+  // Glabella / Mid-eyes
+  [8, 107, 168], [8, 168, 336],
+  // Left eyebrow to eye socket
+  [70, 63, 105], [70, 105, 107],
+  [70, 107, 33], [107, 168, 133], [107, 33, 133],
+  // Right eyebrow to eye socket
+  [336, 296, 263], [336, 263, 300], [296, 334, 293], [334, 293, 300],
+  [336, 362, 263], [168, 336, 362],
+  // Nose bridge and pyramid
+  [168, 197, 6], [168, 6, 1], [168, 133, 197], [168, 197, 362],
+  [197, 1, 98], [197, 327, 1],
+  [1, 98, 2], [1, 2, 327],
+  // Cheeks / Zygomatic
+  [234, 127, 70], [70, 127, 33], [127, 116, 33],
+  [454, 300, 356], [300, 263, 356], [356, 263, 345],
+  [33, 116, 147], [33, 147, 98], [263, 376, 345], [263, 327, 376],
+  // Mouth and lips
+  [2, 98, 61], [2, 61, 0], [2, 0, 291], [2, 291, 327],
+  [61, 37, 0], [0, 267, 291],
+  [61, 147, 172], [291, 397, 376],
+  [61, 17, 291], [61, 84, 17], [17, 314, 291],
+  // Chin
+  [61, 172, 136], [61, 136, 152], [61, 152, 17],
+  [291, 17, 152], [291, 152, 365], [291, 365, 397],
+  [152, 176, 148], [152, 377, 378], [152, 148, 377],
+  // Jaw perimeter braces
+  [234, 93, 132], [132, 58, 172], [172, 136, 150], [150, 149, 152],
+  [454, 323, 361], [361, 288, 397], [397, 365, 379], [379, 378, 152]
+];
+
+// Build unique line segments and vertices for the stylized wireframe
+const STYLIZED_LINE_INDICES = [];
+const STYLIZED_VERTEX_SET = new Set();
+const edgeMap = new Set();
+
+function addEdge(a, b) {
+  const key = a < b ? `${a}_${b}` : `${b}_${a}`;
+  if (!edgeMap.has(key)) {
+    edgeMap.add(key);
+    STYLIZED_LINE_INDICES.push(a, b);
+    STYLIZED_VERTEX_SET.add(a);
+    STYLIZED_VERTEX_SET.add(b);
+  }
+}
+
+// 1. Add triangles edges
+for (const [a, b, c] of STYLIZED_FACIAL_TRIANGLES) {
+  addEdge(a, b);
+  addEdge(b, c);
+  addEdge(c, a);
+}
+
+// 2. Add full outer face boundary loop
+for (let i = 0; i < FACE_OVAL_RING.length; i++) {
+  const a = FACE_OVAL_RING[i];
+  const b = FACE_OVAL_RING[(i + 1) % FACE_OVAL_RING.length];
+  addEdge(a, b);
+}
+
+const STYLIZED_VERTEX_ARRAY = Array.from(STYLIZED_VERTEX_SET);
 
 /**
  * Robust Mobile-Compatible getUserMedia with multi-tier fallback
@@ -51,7 +120,6 @@ async function getMobileCompatibleCameraStream() {
   }
 
   if (!navigator?.mediaDevices?.getUserMedia) {
-    // Legacy fallback check
     const legacyGetUserMedia =
       navigator.getUserMedia ||
       navigator.webkitGetUserMedia ||
@@ -67,9 +135,7 @@ async function getMobileCompatibleCameraStream() {
     throw new Error('Camera access API is not supported in this browser environment.');
   }
 
-  // Multi-tier constraint progression for mobile front cameras
   const constraintTiers = [
-    // Tier 1: Front camera with ideal HD dimensions (works on modern iOS/Android)
     {
       video: {
         facingMode: { ideal: 'user' },
@@ -78,7 +144,6 @@ async function getMobileCompatibleCameraStream() {
       },
       audio: false,
     },
-    // Tier 2: Front camera with portrait-friendly ideal dimensions
     {
       video: {
         facingMode: { ideal: 'user' },
@@ -87,21 +152,18 @@ async function getMobileCompatibleCameraStream() {
       },
       audio: false,
     },
-    // Tier 3: Relaxed front camera constraint without strict resolution limits
     {
       video: {
         facingMode: 'user',
       },
       audio: false,
     },
-    // Tier 4: Preferred front camera
     {
       video: {
         facingMode: { ideal: 'user' },
       },
       audio: false,
     },
-    // Tier 5: Generic video (any available camera sensor)
     {
       video: true,
       audio: false,
@@ -116,7 +178,7 @@ async function getMobileCompatibleCameraStream() {
     } catch (err) {
       lastError = err;
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        throw err; // User explicitly denied, do not loop
+        throw err;
       }
       console.warn('Constraint tier failed, attempting fallback tier:', constraints, err.message);
     }
@@ -147,6 +209,7 @@ export default function HelmetTryOn() {
   // Live Biometric Metrics State
   const [biometrics, setBiometrics] = useState({
     faceWidthCm: 15.2,
+    faceHeightCm: 20.4,
     smilePercent: 0,
     jawOpenPercent: 0,
   });
@@ -160,17 +223,24 @@ export default function HelmetTryOn() {
   const rendererRef = useRef(null);
   const headAnchorGroupRef = useRef(null);
   const helmetContainerRef = useRef(null);
+  
+  // Invisible Depth Occluder Mesh
   const faceMeshGeoRef = useRef(null);
   const faceMeshMeshRef = useRef(null);
-  const faceMeshMaterialRef = useRef(null);
+
+  // Stylized Low-Density Cyber Debug Visualizer (Matching User Image)
+  const stylizedDebugGroupRef = useRef(null);
+  const stylizedLinesGeoRef = useRef(null);
+  const stylizedPointsGeoRef = useRef(null);
+
   const faceLandmarkerRef = useRef(null);
   const gltfLoaderRef = useRef(null);
   const modelCacheRef = useRef(new Map());
 
-  // Smoothing & tracking state refs
+  // Smoothing & dynamic dimensions state refs
   const smoothedPosRef = useRef(new THREE.Vector3());
   const smoothedQuatRef = useRef(new THREE.Quaternion());
-  const smoothedScaleRef = useRef(26.0); // Smooth helmet metric scale
+  const smoothedScaleRef = useRef(new THREE.Vector3(26.0, 31.5, 30.0)); // Auto Width, Height, Depth
   const hasInitialPoseRef = useRef(false);
   const missingFaceFramesRef = useRef(0);
   const activeHelmetConfigRef = useRef(helmets[0]);
@@ -246,11 +316,8 @@ export default function HelmetTryOn() {
     scene.add(headAnchorGroup);
     headAnchorGroupRef.current = headAnchorGroup;
 
-    // 7. REAL-TIME ADAPTIVE FACE MESH & DYNAMIC CRANIUM OCCLUDER
-    // Combines:
-    // a) 478 face landmarks (indices 0..477) with 852 triangles from FACE_LANDMARKS_TESSELATION
-    // b) Extruded cranium back (indices 478..513) and apex (index 514) with 108 triangles
-    // Total 515 vertices and 960 triangles
+    // 7. REAL-TIME ADAPTIVE INVISIBLE OCCLUDER
+    // Combines 478 face landmarks + cranium backing to cull helmet interior
     const tess = FaceLandmarker.FACE_LANDMARKS_TESSELATION;
     const allIndices = [];
 
@@ -259,7 +326,7 @@ export default function HelmetTryOn() {
       allIndices.push(tess[i].start, tess[i + 1].start, tess[i + 2].start);
     }
 
-    // Extruded cranium backing quads connecting face oval to extruded skull rim
+    // Extruded cranium backing quads connecting face oval to skull rim
     const N = FACE_OVAL_RING.length; // 36
     for (let i = 0; i < N; i++) {
       const next = (i + 1) % N;
@@ -286,32 +353,69 @@ export default function HelmetTryOn() {
       'position',
       new THREE.BufferAttribute(new Float32Array(515 * 3), 3)
     );
-    // Default draw range: all 960 triangles for occlusion
-    faceGeo.setDrawRange(0, allIndices.length);
     faceMeshGeoRef.current = faceGeo;
 
+    // Invisible depth occluder (renderOrder = 1)
     const faceMat = new THREE.MeshBasicMaterial({
-      colorWrite: false, // Invisible in normal mode
+      colorWrite: false, // Always invisible depth-only
       depthWrite: true,  // Writes exact 3D facial depth so interior helmet is culled
       depthTest: true,
       side: THREE.DoubleSide,
     });
-    faceMeshMaterialRef.current = faceMat;
 
     const faceMesh = new THREE.Mesh(faceGeo, faceMat);
-    faceMesh.renderOrder = 1; // Rendered BEFORE helmet (renderOrder = 2)
+    faceMesh.renderOrder = 1;
     scene.add(faceMesh);
     faceMeshMeshRef.current = faceMesh;
 
-    // 8. Helmet Container (renderOrder = 2)
+    // 8. STYLIZED LOW-DENSITY CYBER DEBUG VISUALIZER (Matching User Image)
+    const stylizedDebugGroup = new THREE.Group();
+    stylizedDebugGroup.visible = false;
+    scene.add(stylizedDebugGroup);
+    stylizedDebugGroupRef.current = stylizedDebugGroup;
+
+    // Stylized Lines (Yellow / Gold)
+    const linesGeo = new THREE.BufferGeometry();
+    linesGeo.setIndex(new THREE.BufferAttribute(new Uint16Array(STYLIZED_LINE_INDICES), 1));
+    linesGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(478 * 3), 3));
+    stylizedLinesGeoRef.current = linesGeo;
+
+    const linesMat = new THREE.LineBasicMaterial({
+      color: 0xfacc15, // Bright cyber yellow
+      transparent: true,
+      opacity: 0.9,
+      depthTest: false, // Always visible on top when toggled
+    });
+    const stylizedLines = new THREE.LineSegments(linesGeo, linesMat);
+    stylizedLines.renderOrder = 99;
+    stylizedDebugGroup.add(stylizedLines);
+
+    // Stylized Key Landmark Dots (Matching left side of user image)
+    const pointsGeo = new THREE.BufferGeometry();
+    pointsGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(STYLIZED_VERTEX_ARRAY.length * 3), 3));
+    stylizedPointsGeoRef.current = pointsGeo;
+
+    const pointsMat = new THREE.PointsMaterial({
+      color: 0xfef08a,
+      size: 5,
+      sizeAttenuation: false,
+      transparent: true,
+      opacity: 0.95,
+      depthTest: false,
+    });
+    const stylizedPoints = new THREE.Points(pointsGeo, pointsMat);
+    stylizedPoints.renderOrder = 100;
+    stylizedDebugGroup.add(stylizedPoints);
+
+    // 9. Helmet Container (renderOrder = 2)
     const helmetContainer = new THREE.Group();
     headAnchorGroup.add(helmetContainer);
     helmetContainerRef.current = helmetContainer;
 
-    // 9. GLTF Loader
+    // 10. GLTF Loader
     gltfLoaderRef.current = new GLTFLoader();
 
-    // 10. Responsive Resize & Mobile Orientation Handling
+    // 11. Responsive Resize & Mobile Orientation Handling
     const handleResize = () => {
       if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
       const newWidth = containerRef.current.clientWidth || window.innerWidth;
@@ -335,29 +439,11 @@ export default function HelmetTryOn() {
     };
   }, []);
 
-  // --- 2. UPDATE FACE MESH WIREFRAME VISIBILITY ON DEBUG TOGGLE ---
+  // --- 2. UPDATE STYLIZED CYBER WIREFRAME VISIBILITY ON DEBUG TOGGLE ---
   useEffect(() => {
-    if (!faceMeshMaterialRef.current || !faceMeshGeoRef.current) return;
-
-    if (showFaceMeshDebug) {
-      // Glow wireframe showing ONLY the 478-point facial mesh (852 triangles)
-      // Adapts live to smiles, mouth movements, eye blinks & expressions
-      faceMeshMaterialRef.current.colorWrite = true;
-      faceMeshMaterialRef.current.wireframe = true;
-      faceMeshMaterialRef.current.transparent = true;
-      faceMeshMaterialRef.current.opacity = 0.9;
-      faceMeshMaterialRef.current.color = new THREE.Color(0x10b981); // Emerald glow
-      // Restrict draw range to the 852 facial triangles so only the pure face is highlighted
-      faceMeshGeoRef.current.setDrawRange(0, 852 * 3);
-    } else {
-      faceMeshMaterialRef.current.colorWrite = false;
-      faceMeshMaterialRef.current.wireframe = false;
-      faceMeshMaterialRef.current.transparent = false;
-      faceMeshMaterialRef.current.depthWrite = true;
-      // Draw all 960 triangles for complete face + cranium occlusion
-      faceMeshGeoRef.current.setDrawRange(0, 960 * 3);
+    if (stylizedDebugGroupRef.current) {
+      stylizedDebugGroupRef.current.visible = showFaceMeshDebug;
     }
-    faceMeshMaterialRef.current.needsUpdate = true;
   }, [showFaceMeshDebug]);
 
   // --- 3. AUTO-FIT & NORMALIZATION HELPER FOR ANY 3D HELMET ---
@@ -383,12 +469,13 @@ export default function HelmetTryOn() {
       // Re-center model geometry so the inner head cavity sits precisely at (0, 0, 0)
       model3D.position.set(-center.x, -center.y, -center.z);
 
-      // 2. Normalize base model to unit 1.0 width
-      // This eliminates discrepancies whether an author exported in meters, decimeters, or cm
+      // 2. Normalize base model to unit 1.0 box dimensions (X, Y, Z normalized independently)
       const normalizedGroup = new THREE.Group();
       normalizedGroup.add(model3D);
       const rawWidth = Math.max(size.x, 0.001);
-      normalizedGroup.scale.setScalar(1.0 / rawWidth);
+      const rawHeight = Math.max(size.y, 0.001);
+      const rawDepth = Math.max(size.z, 0.001);
+      normalizedGroup.scale.set(1.0 / rawWidth, 1.0 / rawHeight, 1.0 / rawDepth);
 
       // Ensure all meshes have renderOrder = 2 (drawn AFTER face occluder renderOrder = 1)
       model3D.traverse((child) => {
@@ -474,7 +561,6 @@ export default function HelmetTryOn() {
         streamInstance = stream;
         const video = videoRef.current;
         if (video) {
-          // iOS Safari inline playback attributes
           video.setAttribute('playsinline', 'true');
           video.setAttribute('webkit-playsinline', 'true');
           video.setAttribute('muted', 'true');
@@ -563,12 +649,19 @@ export default function HelmetTryOn() {
           const headAnchorGroup = headAnchorGroupRef.current;
           const helmetContainer = helmetContainerRef.current;
           const faceGeo = faceMeshGeoRef.current;
+          const linesGeo = stylizedLinesGeoRef.current;
+          const pointsGeo = stylizedPointsGeoRef.current;
           const camera = cameraRef.current;
 
           // DEMO MODE OVERRIDE: Floating center preview if toggled
           if (demoModeRef.current && headAnchorGroup && helmetContainer) {
             headAnchorGroup.matrix.setPosition(0, 0, -45);
-            helmetContainer.scale.setScalar(26.0 * (activeHelmetConfigRef.current?.scale || 1.0));
+            const userScaleMultiplier = activeHelmetConfigRef.current?.scale || 1.0;
+            helmetContainer.scale.set(
+              26.0 * userScaleMultiplier,
+              31.5 * userScaleMultiplier,
+              30.0 * userScaleMultiplier
+            );
             headAnchorGroup.visible = true;
             if (rendererRef.current && sceneRef.current && camera) {
               rendererRef.current.render(sceneRef.current, camera);
@@ -635,26 +728,42 @@ export default function HelmetTryOn() {
                 const frustumHalfW = frustumHalfH * (cw / ch);
 
                 const posAttr = faceGeo.attributes.position;
+                const linesPosAttr = linesGeo ? linesGeo.attributes.position : null;
 
                 // 1. Map all 478 front face landmarks
                 for (let i = 0; i < landmarks.length; i++) {
                   const lm = landmarks[i];
-                  // Mirrored screen pixel coordinates
                   const sx = (1.0 - lm.x) * rw - dx;
                   const sy = lm.y * rh - dy;
 
-                  // Convert screen pixels into Three.js normalized camera space [-1, 1]
                   const u = (sx / cw - 0.5) * 2;
                   const v = -(sy / ch - 0.5) * 2;
 
                   const px = u * frustumHalfW;
                   const py = v * frustumHalfH;
-                  // lm.z gives the 3D relief of the face in real centimeters (nose forward, ears back)
                   const pz = depth - (lm.z || 0) * (frustumHalfW * 2) * 1.35;
                   posAttr.setXYZ(i, px, py, pz);
+
+                  if (linesPosAttr) {
+                    linesPosAttr.setXYZ(i, px, py, pz);
+                  }
                 }
 
-                // 2. Measure Live Biometric Face Width (Temple-to-Temple: Landmark 234 to 454)
+                // 2. Update Stylized Key Landmark Points (Matching left photo)
+                if (pointsGeo) {
+                  const ptsAttr = pointsGeo.attributes.position;
+                  for (let i = 0; i < STYLIZED_VERTEX_ARRAY.length; i++) {
+                    const lmIdx = STYLIZED_VERTEX_ARRAY[i];
+                    ptsAttr.setXYZ(i, posAttr.getX(lmIdx), posAttr.getY(lmIdx), posAttr.getZ(lmIdx));
+                  }
+                  ptsAttr.needsUpdate = true;
+                }
+
+                if (linesPosAttr) {
+                  linesPosAttr.needsUpdate = true;
+                }
+
+                // 3. Measure Biometric Dimensions (Temple-to-Temple Width and Forehead-to-Chin Height)
                 const earLX = posAttr.getX(234);
                 const earLY = posAttr.getY(234);
                 const earLZ = posAttr.getZ(234);
@@ -663,35 +772,45 @@ export default function HelmetTryOn() {
                 const earRY = posAttr.getY(454);
                 const earRZ = posAttr.getZ(454);
 
+                const foreheadX = posAttr.getX(10);
+                const foreheadY = posAttr.getY(10);
+                const foreheadZ = posAttr.getZ(10);
+
+                const chinX = posAttr.getX(152);
+                const chinY = posAttr.getY(152);
+                const chinZ = posAttr.getZ(152);
+
                 const faceWidthCm = Math.hypot(earRX - earLX, earRY - earLY, earRZ - earLZ);
+                const faceHeightCm = Math.hypot(chinX - foreheadX, chinY - foreheadY, chinZ - foreheadZ);
 
                 // Head direction vectors in 3D camera space
                 const headForward = new THREE.Vector3(0, 0, 1).applyQuaternion(smoothedQuatRef.current);
                 const headUp = new THREE.Vector3(0, 1, 0).applyQuaternion(smoothedQuatRef.current);
 
-                // 3. Extrude Cranium Back from the Live 36-Point Face Oval Contour
-                // Seamlessly attached to user's real facial outline - NEVER a static sphere!
+                // 4. Extrude Cranium Back from the Live 36-Point Face Oval Contour
+                // Protects helmet chin bar: the chin contour connects smoothly towards the throat/neck
                 for (let i = 0; i < FACE_OVAL_RING.length; i++) {
                   const ringIdx = FACE_OVAL_RING[i];
                   const fx = posAttr.getX(ringIdx);
                   const fy = posAttr.getY(ringIdx);
                   const fz = posAttr.getZ(ringIdx);
 
-                  // Extrusion depth varies around head: forehead goes 14cm back, ears 12cm, chin 8cm down/back
                   const angleRatio = i / FACE_OVAL_RING.length;
-                  const distBack = 10.5 + Math.cos(angleRatio * Math.PI * 2) * 2.5;
+                  const distBack = 11.0 + Math.cos(angleRatio * Math.PI * 2) * 2.5;
 
-                  const bx = fx - headForward.x * distBack;
-                  const by = fy - headForward.y * distBack - (i > 15 && i < 22 ? 2.5 : 0);
-                  const bz = fz - headForward.z * distBack;
+                  // Near chin (indices 15..22): curve backwards into throat so occluder NEVER erases the chin bar
+                  const isChinRegion = i >= 15 && i <= 23;
+                  const bx = fx - headForward.x * (isChinRegion ? 7.0 : distBack);
+                  const by = fy - headForward.y * (isChinRegion ? 7.0 : distBack) - (isChinRegion ? 4.0 : 0);
+                  const bz = fz - headForward.z * (isChinRegion ? 7.0 : distBack);
 
                   posAttr.setXYZ(478 + i, bx, by, bz);
                 }
 
                 // Cranium Apex (Vertex 514): Top/rear pole of head
-                const craniumApexX = (earLX + earRX) * 0.5 - headForward.x * 12.0 + headUp.x * 3.5;
-                const craniumApexY = (earLY + earRY) * 0.5 - headForward.y * 12.0 + headUp.y * 3.5;
-                const craniumApexZ = (earLZ + earRZ) * 0.5 - headForward.z * 12.0 + headUp.z * 3.5;
+                const craniumApexX = (earLX + earRX) * 0.5 - headForward.x * 12.5 + headUp.x * 4.0;
+                const craniumApexY = (earLY + earRY) * 0.5 - headForward.y * 12.5 + headUp.y * 4.0;
+                const craniumApexZ = (earLZ + earRZ) * 0.5 - headForward.z * 12.5 + headUp.z * 4.0;
                 posAttr.setXYZ(514, craniumApexX, craniumApexY, craniumApexZ);
 
                 posAttr.needsUpdate = true;
@@ -701,31 +820,48 @@ export default function HelmetTryOn() {
                   faceMeshMeshRef.current.visible = true;
                 }
 
-                // 4. Position 3D Helmet around head: centered at ear midpoint, shifted slightly up
-                const skullCenterX = (earLX + earRX) * 0.5 - headForward.x * 1.5 + headUp.x * 1.8;
-                const skullCenterY = (earLY + earRY) * 0.5 - headForward.y * 1.5 + headUp.y * 1.8;
-                const skullCenterZ = (earLZ + earRZ) * 0.5 - headForward.z * 1.5 + headUp.z * 1.8;
+                // 5. AUTOMATIC HEIGHT, WIDTH & DEPTH ADJUSTMENT (Fixes hair sticking out & chin bar clipping)
+                // - Outer Width: standard adult helmet width (~26.0 - 28.5 cm)
+                // - Outer Height: full cranium + hair volume (~31.5 - 35.0 cm, expands for long faces)
+                // - Outer Depth: generous clearance so chin bar clears chin (~30.5 - 34.0 cm)
+                const targetW = Math.max(faceWidthCm * 1.70, 26.0);
+                const targetH = Math.max(faceHeightCm * 1.62, 31.5);
+                const targetD = Math.max(targetW * 1.14, targetH * 0.96, 30.5);
+
+                smoothedScaleRef.current.x += (targetW - smoothedScaleRef.current.x) * 0.25;
+                smoothedScaleRef.current.y += (targetH - smoothedScaleRef.current.y) * 0.25;
+                smoothedScaleRef.current.z += (targetD - smoothedScaleRef.current.z) * 0.25;
+
+                // 6. POSITION HELMET WITH FORWARD CLEARANCE FOR CHIN BAR
+                // Vertical Center: Centered between chin and top of skull dome (forehead + 7.5cm hair volume)
+                const skullDomeY = foreheadY + headUp.y * 7.5;
+                const helmetCenterY = (chinY + skullDomeY) * 0.5;
+                const helmetCenterX = (earLX + earRX) * 0.5;
+                const helmetCenterZ = (earLZ + earRZ) * 0.5;
+
+                // Push helmet forward by +2.2 cm so the chin bar has generous clearance in front of the chin
+                const helmetCenterPos = new THREE.Vector3(helmetCenterX, helmetCenterY, helmetCenterZ)
+                  .addScaledVector(headForward, 2.2);
 
                 headAnchorGroup.matrix.compose(
-                  new THREE.Vector3(skullCenterX, skullCenterY, skullCenterZ),
+                  helmetCenterPos,
                   smoothedQuatRef.current,
                   new THREE.Vector3(1, 1, 1)
                 );
 
-                // 5. Automatic Dynamic Scaling based on User's Live Face Width
-                // Standard adult helmet outer width is ~1.68x temple-to-temple face width (~26 cm)
-                const targetHelmetWidth = Math.max(faceWidthCm, 10.0) * 1.68;
-                smoothedScaleRef.current += (targetHelmetWidth - smoothedScaleRef.current) * 0.25;
-
                 if (helmetContainer) {
                   const userScaleMultiplier = activeHelmetConfigRef.current?.scale || 1.0;
-                  helmetContainer.scale.setScalar(smoothedScaleRef.current * userScaleMultiplier);
+                  helmetContainer.scale.set(
+                    smoothedScaleRef.current.x * userScaleMultiplier,
+                    smoothedScaleRef.current.y * userScaleMultiplier,
+                    smoothedScaleRef.current.z * userScaleMultiplier
+                  );
                 }
 
                 headAnchorGroup.visible = true;
                 setIsFaceDetected(true);
 
-                // 6. Extract Live Facial Expressions (Smile & Jaw Movement)
+                // 7. Extract Live Facial Expressions (Smile & Jaw Movement)
                 if (results.faceBlendshapes && results.faceBlendshapes[0]?.categories) {
                   const categories = results.faceBlendshapes[0].categories;
                   const smileL = categories.find((c) => c.categoryName === 'mouthSmileLeft')?.score || 0;
@@ -737,6 +873,7 @@ export default function HelmetTryOn() {
                     lastBiometricsUpdate = now;
                     setBiometrics({
                       faceWidthCm: parseFloat(faceWidthCm.toFixed(1)),
+                      faceHeightCm: parseFloat(faceHeightCm.toFixed(1)),
                       smilePercent: Math.round(Math.max(smileL, smileR) * 100),
                       jawOpenPercent: Math.round(jaw * 100),
                     });
@@ -955,7 +1092,7 @@ export default function HelmetTryOn() {
                 AR
               </span>
             </h1>
-            <p className="text-[11px] text-gray-400">Live 478-Landmark Adaptive Fit</p>
+            <p className="text-[11px] text-gray-400">Live Auto-Fit AR Try-On</p>
           </div>
         </div>
 
@@ -1004,13 +1141,13 @@ export default function HelmetTryOn() {
             <span className="hidden sm:inline">{demoMode ? 'Live Track' : 'Preview'}</span>
           </button>
 
-          {/* Live Adaptive Face Mesh Wireframe Toggle */}
+          {/* Stylized Face Mesh Wireframe Toggle (Yellow reference photo look) */}
           <button
             onClick={() => setShowFaceMeshDebug((prev) => !prev)}
-            title={showFaceMeshDebug ? 'Hide Live Face Mesh Wireframe' : 'Show Real-Time Face Mesh Wireframe'}
+            title={showFaceMeshDebug ? 'Hide Stylized Cyber Mesh' : 'Show Stylized Face Mesh'}
             className={`p-2 rounded-xl backdrop-blur-md border transition-all ${
               showFaceMeshDebug
-                ? 'bg-emerald-500 text-black border-emerald-400 shadow-lg shadow-emerald-500/25'
+                ? 'bg-yellow-400 text-black border-yellow-300 shadow-lg shadow-yellow-400/25'
                 : 'bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 border-zinc-700/60'
             }`}
           >
@@ -1044,10 +1181,12 @@ export default function HelmetTryOn() {
       {/* --- LIVE BIOMETRICS HUD PILLS --- */}
       {isFaceDetected && !isLoading && (
         <div className="absolute top-16 left-4 z-20 flex flex-col gap-1.5 pointer-events-none">
-          {/* Measured Face Width */}
+          {/* Measured Face Width & Height */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-900/85 border border-zinc-700/70 backdrop-blur-md text-cyan-300 text-[11px] shadow-lg">
             <span>📐</span>
-            <span>Face Width: <strong className="text-white">{biometrics.faceWidthCm} cm</strong></span>
+            <span>
+              W: <strong className="text-white">{biometrics.faceWidthCm} cm</strong> | H: <strong className="text-white">{biometrics.faceHeightCm} cm</strong>
+            </span>
             <span className="text-[9px] bg-cyan-900/70 text-cyan-300 px-1 rounded">Auto-Fit</span>
           </div>
 
@@ -1098,7 +1237,7 @@ export default function HelmetTryOn() {
           <h2 className="text-lg font-bold text-white mb-2">Setting Up Your 3D Try-On</h2>
           <p className="text-sm text-cyan-400 font-medium animate-pulse">{loadingStep}</p>
           <p className="text-xs text-zinc-500 mt-4 max-w-xs">
-            Using Google MediaPipe 478-Landmark Real-Time Adaptive Face Mesh & Dynamic Head Occlusion.
+            Using Google MediaPipe 478-Point Tracking with Auto-Fit Proportions & Chin Clearance.
           </p>
         </div>
       )}
@@ -1365,22 +1504,22 @@ export default function HelmetTryOn() {
               </div>
             </div>
 
-            {/* LIVE ADAPTIVE FACE MESH DEBUG */}
+            {/* STYLIZED CYBER WIREFRAME DEBUG TOGGLE */}
             <div className="pt-2 border-t border-zinc-800/80">
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-900 border border-zinc-800">
                 <div>
-                  <span className="text-xs font-semibold text-emerald-400 block">
-                    478-Point Live Face Mesh
+                  <span className="text-xs font-semibold text-yellow-400 block">
+                    Stylized Low-Density Mesh
                   </span>
                   <span className="text-[10px] text-zinc-400">
-                    Adapts to smile, expressions & jaw in real-time
+                    Crisp yellow contour, polygonal facets & key landmark dots
                   </span>
                 </div>
                 <button
                   onClick={() => setShowFaceMeshDebug((prev) => !prev)}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
                     showFaceMeshDebug
-                      ? 'bg-emerald-500 text-black'
+                      ? 'bg-yellow-400 text-black'
                       : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                   }`}
                 >
@@ -1451,7 +1590,7 @@ export default function HelmetTryOn() {
                   2
                 </span>
                 <span>
-                  Place your file into the folder: <code className="text-cyan-300 bg-zinc-800 px-1.5 py-0.5 rounded">public/models/helmet1.glb</code>. The app automatically scales and normalizes it to fit your face width!
+                  Place your file into the folder: <code className="text-cyan-300 bg-zinc-800 px-1.5 py-0.5 rounded">public/models/helmet1.glb</code>. The app automatically scales width and height to fit your face!
                 </span>
               </li>
               <li className="flex gap-2.5">

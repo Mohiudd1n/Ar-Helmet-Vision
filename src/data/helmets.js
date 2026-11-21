@@ -2,8 +2,8 @@
  * Multi-Helmet Configuration Catalog
  * 
  * Each entry provides model URLs and default calibration parameters:
- * - scale: Multiplier applied on top of the auto-calculated biometric face width fit
- * - offset: { x, y, z } translation offset from head anchor origin (in centimeters)
+ * - scale: Multiplier applied on top of the auto-calculated biometric face fit (width & height)
+ * - offset: { x, y, z } fine-tuning translation offset from auto-centered head anchor (in centimeters)
  * - rotationOffset: { x, y, z } Euler rotation offset in radians
  * - Procedural styling values used if .glb is missing or fails to fetch
  */
@@ -16,7 +16,7 @@ export const INITIAL_HELMETS = [
     thumbnailColor: "#ef4444",
     modelUrl: "/models/helmet1.glb",
     scale: 1.0,
-    offset: { x: 0.0, y: 1.2, z: -1.2 },
+    offset: { x: 0.0, y: 0.0, z: 0.0 },
     rotationOffset: { x: 0.0, y: 0.0, z: 0.0 },
     // Procedural Fallback Style
     type: "full-face",
@@ -32,7 +32,7 @@ export const INITIAL_HELMETS = [
     thumbnailColor: "#374151",
     modelUrl: "/models/helmet2.glb",
     scale: 1.0,
-    offset: { x: 0.0, y: 1.0, z: -1.0 },
+    offset: { x: 0.0, y: 0.0, z: 0.0 },
     rotationOffset: { x: 0.0, y: 0.0, z: 0.0 },
     // Procedural Fallback Style
     type: "street",
@@ -48,7 +48,7 @@ export const INITIAL_HELMETS = [
     thumbnailColor: "#d97706",
     modelUrl: "/models/helmet3.glb",
     scale: 1.0,
-    offset: { x: 0.0, y: 1.4, z: -0.8 },
+    offset: { x: 0.0, y: 0.0, z: 0.0 },
     rotationOffset: { x: 0.04, y: 0.0, z: 0.0 },
     // Procedural Fallback Style
     type: "open-face",
@@ -64,7 +64,7 @@ export const INITIAL_HELMETS = [
     thumbnailColor: "#06b6d4",
     modelUrl: "/models/helmet4.glb",
     scale: 1.0,
-    offset: { x: 0.0, y: 1.2, z: -1.0 },
+    offset: { x: 0.0, y: 0.0, z: 0.0 },
     rotationOffset: { x: 0.0, y: 0.0, z: 0.0 },
     // Procedural Fallback Style
     type: "neon-sport",
