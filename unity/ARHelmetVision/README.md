@@ -5,7 +5,7 @@ Android, ARKit face tracking on iOS). It uses the same real helmet models and th
 fits as the web app, with the same three screens:
 
 1. **Welcome**: greeting by time of day and the user's saved name
-2. **Catalog**: the 4 brands (Axor, Scorpion, Elementza, Vertigo) on a 3D turntable
+2. **Catalog**: the 3 brands (Axor, Elementza, Vertigo) on a 3D turntable
 3. **Try-On**: AR face tracking with the helmet on the head, a head occluder, the face mesh overlay always on top,
    S–XL sizes, visor modes, a fit calibration panel and screenshots
 
@@ -74,6 +74,6 @@ centre in cm), or tune it in the web app's Fit Studio (`#/studio/<id>`) and copy
 
 ## Model credits
 
-Models from Sketchfab: Scorpion EXO-Combat by Marcin.Adamski (CC BY 4.0), Axor MX Carbon by
+Models from Sketchfab: Axor MX Carbon by
 PEKUKEY (Sketchfab Standard), Elementza helmet by BasedOptimal (CC BY 4.0), Vertigo moto helmet by
 Aleksandr Sagidullin (CC BY 4.0). The catalog and try-on screens show the credits.

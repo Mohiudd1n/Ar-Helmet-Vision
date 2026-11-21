@@ -5,7 +5,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { HELMETS, getHelmet } from '../data/helmets.js';
 import { createFittedHelmet } from '../lib/helmetLoader.js';
-import { createHeadOccluder } from '../lib/headOccluder.js';
+import { createHeadOccluder, SKULL, HAIR_VOLUME_CM } from '../lib/headOccluder.js';
 import { CANONICAL_FACE_VERTICES } from '../lib/canonicalFace.js';
 
 /**
@@ -51,6 +51,14 @@ export default function FitStudio({ helmetId, navigate }) {
     scene.add(face);
 
     const occluder = createHeadOccluder({ debug: true });
+    // Hair volume guide (orange): the helmet's outer shell must cover this, or hair pokes out.
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 32, 20),
+      new THREE.MeshBasicMaterial({ color: 0xf97316, wireframe: true, transparent: true, opacity: 0.35 })
+    );
+    hair.position.set(...SKULL.center);
+    hair.scale.set(...SKULL.radii.map((r) => r + HAIR_VOLUME_CM));
+    occluder.add(hair);
     scene.add(occluder);
     scene.add(new THREE.AxesHelper(20));
     const grid = new THREE.GridHelper(80, 16, 0x333333, 0x222222);

@@ -7,6 +7,9 @@
  *   center    where the centre of the model's bounding box sits relative to the head
  * Calibrated visually in the Fit Studio (#/studio/<id>) against the canonical head.
  *
+ * `liner` tunes the dark inner padding that hides hair inside the shell (false = none).
+ * Shells are sized to cover a head plus ~2.5 cm of hair (orange guide in the Fit Studio).
+ *
  * `visor.meshes` names the visor meshes so the try-on can show them smoked or flipped up.
  * Licences: CC BY 4.0 models must show the credit (the catalog and try-on screens do).
  */
@@ -31,24 +34,6 @@ export const HELMETS = [
     },
   },
   {
-    id: 'scorpion-exo-combat',
-    brand: 'Scorpion',
-    model: 'EXO-Combat',
-    category: 'Convertible Street',
-    tagline: 'Open-face shell with a removable face mask and tinted shield',
-    features: ['Removable face mask', 'Tinted face shield', 'Polycarbonate shell'],
-    accent: '#ef4444',
-    modelUrl: '/models/helmet1.glb',
-    sizeMb: 21.4,
-    fit: { rotation: [0, Math.PI, 0], width: 26, center: [0, 2, -4.5] },
-    visor: { meshes: ['maska_maska_0', 'maska_maska_0_1'], tint: '#111111' },
-    credit: {
-      author: 'Marcin.Adamski',
-      url: 'https://sketchfab.com/3d-models/scorpion-exo-combat-8eae9a2c17324592bad0133821c2b92a',
-      license: 'CC BY 4.0',
-    },
-  },
-  {
     id: 'elementza-full-face',
     brand: 'Elementza',
     model: 'Racer Full-Face',
@@ -58,7 +43,7 @@ export const HELMETS = [
     accent: '#dc2626',
     modelUrl: '/models/helmet4.glb',
     sizeMb: 4.0,
-    fit: { rotation: [0, 0, 0], width: 25, center: [0, -0.3, -2.5] },
+    fit: { rotation: [0, 0, 0], width: 27.5, center: [0, 1.2, -3] },
     visor: { meshes: ['polySurface4_blinn2_0'], tint: '#0b0b0b' },
     credit: {
       author: 'BasedOptimal',
@@ -76,7 +61,8 @@ export const HELMETS = [
     accent: '#a3a3a3',
     modelUrl: '/models/helmet2.glb',
     sizeMb: 4.7,
-    fit: { rotation: [0, 0, 0], width: 25, center: [0, -2.3, -5] },
+    fit: { rotation: [0, 0, 0], width: 26.5, center: [0, -1.6, -5.3] },
+    liner: { browY: 6 }, // open-face: padding starts higher so the forehead stays visible
     visor: null,
     credit: {
       author: 'Aleksandr Sagidullin',

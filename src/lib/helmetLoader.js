@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { createHelmetLiner } from './headOccluder.js';
 
 /**
  * Loads helmet .glb files once and hands out fitted clones.
@@ -95,6 +96,8 @@ export async function createFittedHelmet(helmet, { sizeScale = 1 } = {}) {
   fitted.name = `helmet:${helmet.id}`;
   fitted.add(scaled);
   scaled.position.set(...helmet.fit.center);
+  // Padded inner liner (in head space) so hair never shows through the eye port.
+  if (helmet.liner !== false) fitted.add(createHelmetLiner(helmet.liner || {}));
   fitted.scale.setScalar(sizeScale);
 
   fitted.userData.dimensionsCm = size.clone().multiplyScalar(scale);
