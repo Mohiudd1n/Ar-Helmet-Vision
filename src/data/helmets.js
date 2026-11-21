@@ -2,8 +2,8 @@
  * Multi-Helmet Configuration Catalog
  * 
  * Each entry provides model URLs and default calibration parameters:
- * - scale: Multiplier applied on top of the auto-calculated biometric face fit (width & height)
- * - offset: { x, y, z } fine-tuning translation offset from auto-centered head anchor (in centimeters)
+ * - scale: Multiplier applied on top of the auto-calculated biometric face fit
+ * - offset: { x, y, z } translation offset from head anchor origin (in centimeters)
  * - rotationOffset: { x, y, z } Euler rotation offset in radians
  * - Procedural styling values used if .glb is missing or fails to fetch
  */
@@ -17,7 +17,8 @@ export const INITIAL_HELMETS = [
     modelUrl: "/models/helmet1.glb",
     scale: 1.0,
     offset: { x: 0.0, y: 0.0, z: 0.0 },
-    rotationOffset: { x: 0.0, y: 0.0, z: 0.0 },
+    // Rotate 180° (Math.PI) around Y so visor faces forward (+Z), plus slight pitch level
+    rotationOffset: { x: 0.15, y: Math.PI, z: 0.0 },
     // Procedural Fallback Style
     type: "full-face",
     shellColor: "#17171a",
@@ -48,7 +49,7 @@ export const INITIAL_HELMETS = [
     thumbnailColor: "#d97706",
     modelUrl: "/models/helmet3.glb",
     scale: 1.0,
-    offset: { x: 0.0, y: 0.0, z: 0.0 },
+    offset: { x: 0.0, y: 0.5, z: 0.0 },
     rotationOffset: { x: 0.04, y: 0.0, z: 0.0 },
     // Procedural Fallback Style
     type: "open-face",

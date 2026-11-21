@@ -240,7 +240,7 @@ export default function HelmetTryOn() {
   // Smoothing & dynamic dimensions state refs
   const smoothedPosRef = useRef(new THREE.Vector3());
   const smoothedQuatRef = useRef(new THREE.Quaternion());
-  const smoothedScaleRef = useRef(new THREE.Vector3(26.0, 31.5, 30.0)); // Auto Width, Height, Depth
+  const smoothedScaleRef = useRef(28.0); // Uniform proportional scale
   const hasInitialPoseRef = useRef(false);
   const missingFaceFramesRef = useRef(0);
   const activeHelmetConfigRef = useRef(helmets[0]);
@@ -293,7 +293,7 @@ export default function HelmetTryOn() {
     scene.environment = pmremGenerator.fromScene(roomEnv).texture;
 
     // 5. Lighting Setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
     scene.add(ambientLight);
 
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
@@ -384,7 +384,7 @@ export default function HelmetTryOn() {
       color: 0xfacc15, // Bright cyber yellow
       transparent: true,
       opacity: 0.9,
-      depthTest: false, // Always visible on top when toggled
+      depthTest: false,
     });
     const stylizedLines = new THREE.LineSegments(linesGeo, linesMat);
     stylizedLines.renderOrder = 99;
@@ -469,13 +469,12 @@ export default function HelmetTryOn() {
       // Re-center model geometry so the inner head cavity sits precisely at (0, 0, 0)
       model3D.position.set(-center.x, -center.y, -center.z);
 
-      // 2. Normalize base model to unit 1.0 box dimensions (X, Y, Z normalized independently)
+      // 2. Uniformly normalize base model by its natural width:
+      // PRESERVES NATURAL 3D PROPORTIONS! ZERO SQUASHING, ZERO Y-FLATTENING!
       const normalizedGroup = new THREE.Group();
       normalizedGroup.add(model3D);
       const rawWidth = Math.max(size.x, 0.001);
-      const rawHeight = Math.max(size.y, 0.001);
-      const rawDepth = Math.max(size.z, 0.001);
-      normalizedGroup.scale.set(1.0 / rawWidth, 1.0 / rawHeight, 1.0 / rawDepth);
+      normalizedGroup.scale.setScalar(1.0 / rawWidth);
 
       // Ensure all meshes have renderOrder = 2 (drawn AFTER face occluder renderOrder = 1)
       model3D.traverse((child) => {
@@ -657,11 +656,7 @@ export default function HelmetTryOn() {
           if (demoModeRef.current && headAnchorGroup && helmetContainer) {
             headAnchorGroup.matrix.setPosition(0, 0, -45);
             const userScaleMultiplier = activeHelmetConfigRef.current?.scale || 1.0;
-            helmetContainer.scale.set(
-              26.0 * userScaleMultiplier,
-              31.5 * userScaleMultiplier,
-              30.0 * userScaleMultiplier
-            );
+            helmetContainer.scale.setScalar(28.0 * userScaleMultiplier);
             headAnchorGroup.visible = true;
             if (rendererRef.current && sceneRef.current && camera) {
               rendererRef.current.render(sceneRef.current, camera);
@@ -780,6 +775,10 @@ export default function HelmetTryOn() {
                 const chinY = posAttr.getY(152);
                 const chinZ = posAttr.getZ(152);
 
+                const glabellaX = posAttr.getX(168);
+                const glabellaY = posAttr.getY(168);
+                const glabellaZ = posAttr.getZ(168);
+
                 const faceWidthCm = Math.hypot(earRX - earLX, earRY - earLY, earRZ - earLZ);
                 const faceHeightCm = Math.hypot(chinX - foreheadX, chinY - foreheadY, chinZ - foreheadZ);
 
@@ -788,7 +787,6 @@ export default function HelmetTryOn() {
                 const headUp = new THREE.Vector3(0, 1, 0).applyQuaternion(smoothedQuatRef.current);
 
                 // 4. Extrude Cranium Back from the Live 36-Point Face Oval Contour
-                // Protects helmet chin bar: the chin contour connects smoothly towards the throat/neck
                 for (let i = 0; i < FACE_OVAL_RING.length; i++) {
                   const ringIdx = FACE_OVAL_RING[i];
                   const fx = posAttr.getX(ringIdx);
@@ -796,12 +794,12 @@ export default function HelmetTryOn() {
                   const fz = posAttr.getZ(ringIdx);
 
                   const angleRatio = i / FACE_OVAL_RING.length;
-                  const distBack = 11.0 + Math.cos(angleRatio * Math.PI * 2) * 2.5;
+                  const distBack = 11.5 + Math.cos(angleRatio * Math.PI * 2) * 2.5;
 
-                  // Near chin (indices 15..22): curve backwards into throat so occluder NEVER erases the chin bar
+                  // Near chin (indices 15..23): curve backwards into throat so occluder never erases chin bar
                   const isChinRegion = i >= 15 && i <= 23;
                   const bx = fx - headForward.x * (isChinRegion ? 7.0 : distBack);
-                  const by = fy - headForward.y * (isChinRegion ? 7.0 : distBack) - (isChinRegion ? 4.0 : 0);
+                  const by = fy - headForward.y * (isChinRegion ? 7.0 : distBack) - (isChinRegion ? 4.5 : 0);
                   const bz = fz - headForward.z * (isChinRegion ? 7.0 : distBack);
 
                   posAttr.setXYZ(478 + i, bx, by, bz);
@@ -820,28 +818,29 @@ export default function HelmetTryOn() {
                   faceMeshMeshRef.current.visible = true;
                 }
 
-                // 5. AUTOMATIC HEIGHT, WIDTH & DEPTH ADJUSTMENT (Fixes hair sticking out & chin bar clipping)
-                // - Outer Width: standard adult helmet width (~26.0 - 28.5 cm)
-                // - Outer Height: full cranium + hair volume (~31.5 - 35.0 cm, expands for long faces)
-                // - Outer Depth: generous clearance so chin bar clears chin (~30.5 - 34.0 cm)
-                const targetW = Math.max(faceWidthCm * 1.70, 26.0);
-                const targetH = Math.max(faceHeightCm * 1.62, 31.5);
-                const targetD = Math.max(targetW * 1.14, targetH * 0.96, 30.5);
+                // 5. UNIFORM PROPORTIONAL AUTO-SCALING (PREVENTS Y-FLATTENING & ENCASES LONG HAIR)
+                // A human head from chin to top of hair is approx faceHeight + 9.5 cm.
+                // The helmet must cover BOTH width (~26.5 cm) AND full head height with hair volume:
+                const fullHeadHeightCm = faceHeightCm + 9.5;
+                const requiredWidthScale = Math.max(faceWidthCm * 1.74, 26.5);
+                const requiredHeightScale = (Math.max(fullHeadHeightCm * 1.15, 33.5)) / 1.35;
+                
+                // Maximum dimension scale guarantees helmet is tall enough for long hair and wide enough for face
+                const targetUniformScale = Math.max(requiredWidthScale, requiredHeightScale);
+                smoothedScaleRef.current += (targetUniformScale - smoothedScaleRef.current) * 0.25;
 
-                smoothedScaleRef.current.x += (targetW - smoothedScaleRef.current.x) * 0.25;
-                smoothedScaleRef.current.y += (targetH - smoothedScaleRef.current.y) * 0.25;
-                smoothedScaleRef.current.z += (targetD - smoothedScaleRef.current.z) * 0.25;
+                // 6. POSITION HELMET WITH HAIR CLEARANCE AND CHIN BAR CLEARANCE
+                // Centered at ear midpoint, height aligned with glabella (eyes) + 2.0 cm up
+                // This places the top crown dome 12+ cm above the forehead, completely encasing long hair!
+                const earMidX = (earLX + earRX) * 0.5;
+                const earMidZ = (earLZ + earRZ) * 0.5;
 
-                // 6. POSITION HELMET WITH FORWARD CLEARANCE FOR CHIN BAR
-                // Vertical Center: Centered between chin and top of skull dome (forehead + 7.5cm hair volume)
-                const skullDomeY = foreheadY + headUp.y * 7.5;
-                const helmetCenterY = (chinY + skullDomeY) * 0.5;
-                const helmetCenterX = (earLX + earRX) * 0.5;
-                const helmetCenterZ = (earLZ + earRZ) * 0.5;
-
-                // Push helmet forward by +2.2 cm so the chin bar has generous clearance in front of the chin
-                const helmetCenterPos = new THREE.Vector3(helmetCenterX, helmetCenterY, helmetCenterZ)
-                  .addScaledVector(headForward, 2.2);
+                // Push forward by +2.0 cm so the chin bar has comfortable clearance in front of the chin
+                const helmetCenterPos = new THREE.Vector3(
+                  earMidX,
+                  glabellaY + headUp.y * 2.0,
+                  earMidZ
+                ).addScaledVector(headForward, 2.0);
 
                 headAnchorGroup.matrix.compose(
                   helmetCenterPos,
@@ -851,11 +850,8 @@ export default function HelmetTryOn() {
 
                 if (helmetContainer) {
                   const userScaleMultiplier = activeHelmetConfigRef.current?.scale || 1.0;
-                  helmetContainer.scale.set(
-                    smoothedScaleRef.current.x * userScaleMultiplier,
-                    smoothedScaleRef.current.y * userScaleMultiplier,
-                    smoothedScaleRef.current.z * userScaleMultiplier
-                  );
+                  // UNIFORM SCALING: PRESERVES TRUE 3D HELMET VOLUME WITH ZERO Y-FLATTENING
+                  helmetContainer.scale.setScalar(smoothedScaleRef.current * userScaleMultiplier);
                 }
 
                 headAnchorGroup.visible = true;
@@ -1476,8 +1472,8 @@ export default function HelmetTryOn() {
                 </div>
                 <input
                   type="range"
-                  min="-0.8"
-                  max="0.8"
+                  min="-1.5"
+                  max="1.5"
                   step="0.02"
                   value={activeHelmet.rotationOffset.x}
                   onChange={(e) => updateActiveHelmet('rotationOffset', 'x', e.target.value)}
@@ -1494,8 +1490,8 @@ export default function HelmetTryOn() {
                 </div>
                 <input
                   type="range"
-                  min="-0.8"
-                  max="0.8"
+                  min="-3.14"
+                  max="3.14"
                   step="0.02"
                   value={activeHelmet.rotationOffset.y}
                   onChange={(e) => updateActiveHelmet('rotationOffset', 'y', e.target.value)}
