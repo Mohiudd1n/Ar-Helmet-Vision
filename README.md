@@ -12,7 +12,7 @@ that share the same 3D models and the same calibrated fits:
 ## Screens
 
 1. **Welcome**: greets the user by time of day, with an optional saved name and a spinning 3D helmet.
-2. **Catalog**: 3 brands of real helmet models (Axor, Elementza, Vertigo) as live 3D
+2. **Catalog**: 2 brands of real helmet models (Axor, Vertigo) as live 3D
    turntables, with brand filters. Tap a helmet to try it on.
 3. **AR Try-On**: the helmet tracks your head with a face-mesh overlay that stays visible at every
    angle. It has S–XL sizes, visor modes (smoked / up / tinted), a helmet switcher, photo capture and model credits.
@@ -79,7 +79,6 @@ unity/ARHelmetVision/     Unity 6 AR Foundation app (see its README)
 ## Model credits
 
 - Axor MX Carbon by PEKUKEY, Sketchfab Standard licence
-- Elementza helmet by BasedOptimal, CC BY 4.0
 - Vertigo moto helmet by Aleksandr Sagidullin, CC BY 4.0
 
 Links are in `src/data/helmets.js`, and the app shows the credits on the catalog cards and in the try-on info panel.

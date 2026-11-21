@@ -6,7 +6,6 @@ Real helmet models downloaded from Sketchfab (credits in `src/data/helmets.js` a
 |---|---|---|
 | `helmet2.glb` | Vertigo Classic Jet | CC BY 4.0 |
 | `helmet3.glb` | Axor MX Carbon | Sketchfab Standard |
-| `helmet4.glb` | Elementza Racer Full-Face | CC BY 4.0 |
 
 To add one, drop a `.glb` here, add it to `src/data/helmets.js`, and calibrate its fit in the
 Fit Studio (`#/studio/<id>`). The Unity app copies these files in via

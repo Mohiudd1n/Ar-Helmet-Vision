@@ -9,7 +9,7 @@ const FitStudio = lazy(() => import('./screens/FitStudio.jsx'));
 /**
  * Three screens, driven by the URL hash so the phone's back button works:
  *   #/              Welcome (greeting)
- *   #/catalog       Helmet catalog (3 brands, live 3D previews)
+ *   #/catalog       Helmet catalog (2 brands, live 3D previews)
  *   #/try/<id>      AR try-on for one helmet
  *   #/studio/<id>   Developer fit calibration (not linked from the UI)
  */

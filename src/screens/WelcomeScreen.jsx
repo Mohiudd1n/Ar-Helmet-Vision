@@ -18,7 +18,7 @@ export default function WelcomeScreen({ navigate }) {
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || '');
   const [editing, setEditing] = useState(false);
   const greeting = useMemo(() => greetingFor(), []);
-  const hero = HELMETS.find((h) => h.id === 'elementza-full-face') || HELMETS[0];
+  const hero = HELMETS.find((h) => h.id === 'vertigo-jet') || HELMETS[0];
 
   useEffect(() => {
     // Start fetching the lighter models while the user reads the greeting.
