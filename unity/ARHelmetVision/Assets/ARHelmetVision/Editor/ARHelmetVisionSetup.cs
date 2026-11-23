@@ -16,7 +16,7 @@ namespace ARHelmetVision.EditorTools
     /// One-click project setup: Tools ▸ AR Helmet Vision ▸ Set Up Everything.
     /// Copies the helmet .glb files from the web app, creates the catalog with the same
     /// calibrated fits as src/data/helmets.js, builds the AR face prefab and the three
-    /// scenes (Welcome, Catalog, Try-On), and applies mobile AR player settings.
+    /// scenes (Splash, Welcome, Catalog, Try-On), and applies mobile AR player settings.
     /// Safe to run again; it overwrites what it generated.
     /// </summary>
     public static class ARHelmetVisionSetup
@@ -56,7 +56,7 @@ namespace ARHelmetVision.EditorTools
             BuildScenes();
             ApplyPlayerSettings();
             EditorUtility.DisplayDialog("AR Helmet Vision",
-                "Setup finished.\n\nLast manual step: Project Settings ▸ XR Plug-in Management ▸ tick ARCore (Android tab) and ARKit (iOS tab), and enable Face Tracking in the ARKit settings.\n\nThen open Scenes/01_Welcome and build.",
+                "Setup finished.\n\nLast manual step: Project Settings ▸ XR Plug-in Management ▸ tick ARCore (Android tab) and ARKit (iOS tab), and enable Face Tracking in the ARKit settings.\n\nThen open Scenes/00_Splash (the app starts there) and build.",
                 "OK");
         }
 
@@ -141,13 +141,18 @@ namespace ARHelmetVision.EditorTools
             EnsureFolder(ScenesDir);
             var facePrefab = BuildFacePrefab();
 
+            var splash = NewScene();
+            CreateUiCamera(new Color(0.137f, 0.122f, 0.125f));
+            new GameObject("SplashScreen").AddComponent<SplashScreen>();
+            Save(splash, AppState.SplashScene);
+
             var welcome = NewScene();
-            CreateUiCamera(new Color(0.03f, 0.04f, 0.07f));
+            CreateUiCamera(new Color(0.925f, 0.925f, 0.933f));
             new GameObject("WelcomeScreen").AddComponent<WelcomeScreen>();
             Save(welcome, AppState.WelcomeScene);
 
             var catalog = NewScene();
-            var cam = CreateUiCamera(new Color(0.05f, 0.05f, 0.07f));
+            var cam = CreateUiCamera(new Color(0.80f, 0.80f, 0.82f));
             cam.transform.position = new Vector3(0f, -0.16f, 0.95f);
             cam.transform.LookAt(new Vector3(0f, -0.16f, 0f));
             cam.fieldOfView = 32f;
@@ -167,11 +172,12 @@ namespace ARHelmetVision.EditorTools
 
             EditorBuildSettings.scenes = new[]
             {
+                new EditorBuildSettingsScene($"{ScenesDir}/{AppState.SplashScene}.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/{AppState.WelcomeScene}.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/{AppState.CatalogScene}.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/{AppState.TryOnScene}.unity", true),
             };
-            EditorSceneManager.OpenScene($"{ScenesDir}/{AppState.WelcomeScene}.unity");
+            EditorSceneManager.OpenScene($"{ScenesDir}/{AppState.SplashScene}.unity");
         }
 
         static GameObject BuildFacePrefab()
@@ -260,7 +266,7 @@ namespace ARHelmetVision.EditorTools
         [MenuItem("Tools/AR Helmet Vision/5. Apply Mobile AR Player Settings")]
         public static void ApplyPlayerSettings()
         {
-            PlayerSettings.productName = "HelmetVision AR";
+            PlayerSettings.productName = "HelmetAR";
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
 
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.helmetvision.ar");

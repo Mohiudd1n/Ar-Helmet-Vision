@@ -9,24 +9,24 @@ export default function CatalogScreen({ navigate }) {
   const list = brand === 'All' ? HELMETS : HELMETS.filter((h) => h.brand === brand);
 
   return (
-    <div className="w-full h-full overflow-y-auto bg-black">
-      <header className="sticky top-0 z-10 bg-black/80 backdrop-blur-xl border-b border-white/5 px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3">
+    <div className="w-full h-full overflow-y-auto bg-[#ececee] text-neutral-900">
+      <header className="sticky top-0 z-10 bg-[#ececee]/85 backdrop-blur-xl border-b border-black/5 px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3">
         <div className="mx-auto max-w-6xl">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate('/')} aria-label="Back"
-              className="w-10 h-10 grid place-items-center rounded-full bg-white/10 border border-white/10 active:scale-95">
+              className="w-10 h-10 grid place-items-center rounded-full bg-white border border-black/5 text-neutral-900 active:scale-95">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-lg font-semibold leading-tight">Helmet catalog</h1>
-              <p className="text-xs text-zinc-400">Tap a helmet to try it on in AR</p>
+              <h1 className="text-xl font-bold tracking-tight leading-tight">Helmet catalog</h1>
+              <p className="text-xs text-neutral-500">Tap a helmet to try it on in AR</p>
             </div>
           </div>
           <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
             {brands.map((b) => (
               <button key={b} onClick={() => setBrand(b)}
                 className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium border transition ${
-                  brand === b ? 'bg-white text-black border-white' : 'bg-white/5 text-zinc-300 border-white/10'}`}>
+                  brand === b ? 'bg-neutral-900 text-white border-neutral-900' : 'bg-white text-neutral-700 border-black/5'}`}>
                 {b}
               </button>
             ))}
@@ -37,27 +37,27 @@ export default function CatalogScreen({ navigate }) {
       <div className="mx-auto max-w-6xl p-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {list.map((h) => (
           <article key={h.id}
-            className="group rounded-3xl border border-white/10 bg-gradient-to-b from-zinc-900 to-zinc-950 overflow-hidden flex flex-col">
+            className="group rounded-[28px] border border-black/5 bg-gradient-to-b from-[#b4b4b8] to-[#dcdce0] shadow-[0_12px_30px_-18px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col">
             <button onClick={() => navigate(`/try/${h.id}`)} className="relative block text-left" aria-label={`Try on ${h.brand} ${h.model}`}>
               <div className="absolute inset-0 opacity-40" style={{ background: `radial-gradient(circle at 50% 60%, ${h.accent}55, transparent 65%)` }} />
               <HelmetTurntable helmet={h} className="aspect-square w-full" />
-              <span className="absolute left-3 top-3 text-[10px] px-2 py-1 rounded-full bg-black/60 border border-white/10 text-zinc-200">{h.category}</span>
+              <span className="absolute left-3 top-3 text-[10px] px-2 py-1 rounded-full bg-white/80 border border-black/5 text-neutral-800">{h.category}</span>
             </button>
             <div className="p-4 pt-1 flex-1 flex flex-col">
               <p className="text-[11px] uppercase tracking-[0.2em] font-semibold" style={{ color: h.accent }}>{h.brand}</p>
-              <h2 className="text-lg font-semibold">{h.model}</h2>
-              <p className="text-xs text-zinc-400 mt-1">{h.tagline}</p>
+              <h2 className="text-lg font-bold text-neutral-900">{h.model}</h2>
+              <p className="text-xs text-neutral-600 mt-1">{h.tagline}</p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {h.features.map((f) => (
-                  <span key={f} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-zinc-300">{f}</span>
+                  <span key={f} className="text-[10px] px-2 py-0.5 rounded-full bg-white/70 border border-black/5 text-neutral-700">{f}</span>
                 ))}
               </div>
               <div className="flex-1" />
               <button onClick={() => navigate(`/try/${h.id}`)}
-                className="mt-4 w-full py-3 rounded-xl bg-white text-black text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition">
+                className="mt-4 w-full py-3 rounded-full bg-[#d9431f] text-white text-sm font-semibold shadow-[0_8px_18px_-8px_rgba(217,67,31,0.7)] flex items-center justify-center gap-2 active:scale-[0.98] transition">
                 <ScanFace className="w-4 h-4" /> Try on in AR
               </button>
-              <p className="mt-2 text-[10px] text-zinc-600">
+              <p className="mt-2 text-[10px] text-neutral-500">
                 3D model: <a href={h.credit.url} target="_blank" rel="noreferrer" className="underline">{h.credit.author}</a> · {h.credit.license}
               </p>
             </div>

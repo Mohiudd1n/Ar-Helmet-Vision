@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { cachedFetchBuffer } from './assetCache.js';
 
 /**
  * Loads helmet .glb files once and hands out fitted clones.
@@ -16,23 +17,19 @@ const sceneCache = new Map(); // url -> Promise<THREE.Object3D>
 
 export function loadHelmetScene(url, onProgress) {
   if (!sceneCache.has(url)) {
-    const promise = new Promise((resolve, reject) => {
-      loader.load(
-        url,
-        (gltf) => {
+    // Bytes come from Cache Storage after the first visit; GLTFLoader just parses them.
+    const promise = cachedFetchBuffer(url, onProgress)
+      .then((buffer) => new Promise((resolve, reject) => {
+        loader.parse(buffer, '', (gltf) => {
           const root = gltf.scene || gltf.scenes[0];
           prepareMaterials(root);
           resolve(root);
-        },
-        (evt) => {
-          if (onProgress && evt.total) onProgress(evt.loaded / evt.total);
-        },
-        (err) => {
-          sceneCache.delete(url);
-          reject(err);
-        }
-      );
-    });
+        }, reject);
+      }))
+      .catch((err) => {
+        sceneCache.delete(url);
+        throw err;
+      });
     sceneCache.set(url, promise);
   }
   return sceneCache.get(url);

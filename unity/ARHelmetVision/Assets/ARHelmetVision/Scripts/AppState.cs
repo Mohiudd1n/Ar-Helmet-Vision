@@ -11,6 +11,7 @@ namespace ARHelmetVision
     /// </summary>
     public static class AppState
     {
+        public const string SplashScene = "00_Splash";
         public const string WelcomeScene = "01_Welcome";
         public const string CatalogScene = "02_Catalog";
         public const string TryOnScene = "03_TryOn";

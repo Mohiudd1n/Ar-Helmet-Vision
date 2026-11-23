@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import Splash from './components/Splash.jsx';
 import WelcomeScreen from './screens/WelcomeScreen.jsx';
 import CatalogScreen from './screens/CatalogScreen.jsx';
 import { getHelmet } from './data/helmets.js';
@@ -21,6 +22,7 @@ function parseHash() {
 
 export default function App() {
   const [route, setRoute] = useState(parseHash);
+  const [splashDone, setSplashDone] = useState(false);
 
   useEffect(() => {
     const onHash = () => setRoute(parseHash());
@@ -42,6 +44,8 @@ export default function App() {
   } else {
     content = <WelcomeScreen navigate={navigate} />;
   }
+
+  if (!splashDone) return <Splash onDone={() => setSplashDone(true)} />;
 
   return (
     <main className="w-full h-[100dvh] bg-black text-white overflow-hidden">

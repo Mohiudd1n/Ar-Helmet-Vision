@@ -1,8 +1,11 @@
 /**
- * Front-camera access that works on iOS Safari and Android Chrome.
+ * Camera access that works on iOS Safari and Android Chrome.
+ * `facing` is 'user' (front / selfie) or 'environment' (rear).
  * Tries progressively looser constraints; permission errors are thrown immediately.
  */
-export async function openFrontCamera() {
+export const openFrontCamera = () => openCamera('user');
+
+export async function openCamera(facing = 'user') {
   if (!navigator.mediaDevices?.getUserMedia) {
     if (!window.isSecureContext) {
       const err = new Error(window.location.href.replace(/^http:/i, 'https:'));
@@ -12,10 +15,12 @@ export async function openFrontCamera() {
     throw new Error('This browser does not support camera access.');
   }
 
+  // 'user' stays exact-ish as before; the rear camera uses `ideal` so devices with one camera still open.
+  const facingMode = facing === 'environment' ? { ideal: 'environment' } : 'user';
   const tiers = [
-    { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
-    { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-    { facingMode: 'user' },
+    { facingMode, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+    { facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+    { facingMode },
     true,
   ];
 

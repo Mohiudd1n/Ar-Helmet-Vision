@@ -16,6 +16,7 @@ namespace ARHelmetVision
 
         Text _title, _status, _credit;
         Button _meshBtn, _visorBtn;
+        readonly List<Button> _helmetBtns = new();
         GameObject _calibPanel;
         readonly List<Button> _sizeBtns = new();
 
@@ -45,7 +46,7 @@ namespace ARHelmetVision
             var canvas = UIFactory.CreateCanvas();
             var root = UIFactory.SafeArea(canvas.transform);
 
-            UIFactory.Button("Back", root, "←", new Color(0, 0, 0, 0.45f), Color.white, 60, () => SceneManager.LoadScene(AppState.CatalogScene))
+            UIFactory.Button("Back", root, "←", new Color(0, 0, 0, 0.45f), Color.white, 60, () => SceneManager.LoadScene(AppState.CatalogScene), 60)
                 .GetComponent<RectTransform>().Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(40, -170), new Vector2(160, -50));
             _title = UIFactory.Text("Title", root, "", 46, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
             _title.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(190, -170), new Vector2(-40, -50));
@@ -62,7 +63,7 @@ namespace ARHelmetVision
             for (int i = 0; i < Sizes.Length; i++)
             {
                 var s = Sizes[i];
-                var b = UIFactory.Button($"Size {s.label}", root, s.label, UIFactory.Panel, Color.white, 40, () => AppState.SizeScale = s.scale);
+                var b = UIFactory.Button($"Size {s.label}", root, s.label, UIFactory.DarkGlass, Color.white, 40, () => AppState.SizeScale = s.scale, 45);
                 float x0 = 0.5f + (i - 2) * 0.11f;
                 b.GetComponent<RectTransform>().Place(new Vector2(x0, 0), new Vector2(x0 + 0.1f, 0), new Vector2(0, 330), new Vector2(0, 420));
                 _sizeBtns.Add(b);
@@ -74,8 +75,9 @@ namespace ARHelmetVision
             for (int i = 0; i < helmets.Length; i++)
             {
                 int idx = i;
-                var b = UIFactory.Button($"Helmet {helmets[i].brand}", root, helmets[i].brand, new Color(0, 0, 0, 0.55f), Color.white, 34, () => AppState.SelectedIndex = idx);
+                var b = UIFactory.Button($"Helmet {helmets[i].brand}", root, helmets[i].brand, new Color(0, 0, 0, 0.55f), Color.white, 34, () => AppState.SelectedIndex = idx, 65);
                 b.GetComponent<RectTransform>().Place(new Vector2(w * i, 0), new Vector2(w * (i + 1), 0), new Vector2(12, 160), new Vector2(-12, 290));
+                _helmetBtns.Add(b);
             }
 
             _credit = UIFactory.Text("Credit", root, "", 24, UIFactory.Muted, TextAnchor.MiddleCenter);
@@ -86,7 +88,7 @@ namespace ARHelmetVision
 
         Button SideButton(Transform root, string label, int slot, System.Action onClick)
         {
-            var b = UIFactory.Button(label, root, label, new Color(0, 0, 0, 0.5f), Color.white, 30, onClick);
+            var b = UIFactory.Button(label, root, label, new Color(0, 0, 0, 0.5f), Color.white, 30, onClick, 40);
             float y = 0.62f - slot * 0.075f;
             b.GetComponent<RectTransform>().Place(new Vector2(1, y), new Vector2(1, y), new Vector2(-200, -60), new Vector2(-30, 60));
             return b;
@@ -94,7 +96,7 @@ namespace ARHelmetVision
 
         void BuildCalibration(Transform root)
         {
-            var panel = UIFactory.Image("Calibration", root, new Color(0.05f, 0.05f, 0.07f, 0.92f));
+            var panel = UIFactory.Image("Calibration", root, new Color(0.05f, 0.05f, 0.07f, 0.92f)).Rounded(48);
             panel.rectTransform.Place(new Vector2(0, 0.45f), new Vector2(0.8f, 0.75f), new Vector2(30, 0), new Vector2(0, 0));
             _calibPanel = panel.gameObject;
 
@@ -125,16 +127,18 @@ namespace ARHelmetVision
             if (!h) return;
             _title.text = h.DisplayName;
             _credit.text = $"3D model by {h.creditAuthor} · {h.creditLicense}";
-            _meshBtn.GetComponent<Image>().color = AppState.ShowFaceMesh ? new Color(0.13f, 0.83f, 0.93f, 0.9f) : new Color(0, 0, 0, 0.5f);
+            _meshBtn.GetComponent<Image>().color = AppState.ShowFaceMesh ? UIFactory.Accent : UIFactory.DarkGlass;
             _visorBtn.gameObject.SetActive(h.HasVisor);
             _visorBtn.SetLabel($"Visor\n{AppState.Visor}");
             for (int i = 0; i < Sizes.Length; i++)
-                _sizeBtns[i].GetComponent<Image>().color = Mathf.Approximately(Sizes[i].scale, AppState.SizeScale) ? new Color(1, 1, 1, 0.85f) : UIFactory.Panel;
+                _sizeBtns[i].GetComponent<Image>().color = Mathf.Approximately(Sizes[i].scale, AppState.SizeScale) ? UIFactory.Accent : UIFactory.DarkGlass;
+            for (int i = 0; i < _helmetBtns.Count; i++)
+                _helmetBtns[i].GetComponent<Image>().color = i == AppState.SelectedIndex ? UIFactory.Accent : new Color(0, 0, 0, 0.55f);
         }
 
         void TakePhoto()
         {
-            var file = $"HelmetVision-{System.DateTime.Now:yyyyMMdd-HHmmss}.png";
+            var file = $"HelmetAR-{System.DateTime.Now:yyyyMMdd-HHmmss}.png";
             ScreenCapture.CaptureScreenshot(file); // saved to Application.persistentDataPath on device
             Debug.Log($"Saved photo to {Path.Combine(Application.persistentDataPath, file)}");
         }

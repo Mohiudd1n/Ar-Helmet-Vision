@@ -5,6 +5,7 @@ import { createFittedHelmet } from './helmetLoader.js';
 import { createHeadOccluder } from './headOccluder.js';
 import { OVERLAY } from './faceTopology.js';
 import { PoseFilter } from './oneEuroFilter.js';
+import { cachedFetchBuffer, TRACKER_MODEL_URL } from './assetCache.js';
 
 /**
  * AR try-on engine (framework-free; TryOnScreen drives it).
@@ -17,7 +18,7 @@ import { PoseFilter } from './oneEuroFilter.js';
  *   inside one "stage" element). A helmet placed in canonical head space then lands on the
  *   real head with no guessed depth or extra scaling.
  * - The stage is mirrored with CSS for the selfie view, which flips video and 3D together,
- *   so the raw matrix can be used as is.
+ *   so the raw matrix can be used as is. (The rear camera is not mirrored, see setMirrored.)
  * - The head occluder and the helmet both hang off one `headAnchor`, so they can never drift
  *   apart. Pose jitter is removed with a One Euro filter.
  * - The face mesh overlay is built from the live landmarks every frame (it follows
@@ -25,8 +26,6 @@ import { PoseFilter } from './oneEuroFilter.js';
  */
 
 const MEDIAPIPE_FOV = 63;
-const MODEL_URL =
-  'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 const HOLD_MS = 600; // keep showing the last pose this long when tracking drops for a moment
 
 let landmarkerPromise = null;
@@ -35,8 +34,13 @@ function createLandmarker() {
   if (!landmarkerPromise) {
     landmarkerPromise = (async () => {
       const fileset = await FilesetResolver.forVisionTasks('/mediapipe/wasm');
+      // Model bytes come from Cache Storage after the first visit; fall back to the URL if that fails.
+      let modelBuffer = null;
+      try { modelBuffer = new Uint8Array(await cachedFetchBuffer(TRACKER_MODEL_URL)); } catch { /* use URL */ }
       const options = (delegate) => ({
-        baseOptions: { modelAssetPath: MODEL_URL, delegate },
+        baseOptions: modelBuffer
+          ? { modelAssetBuffer: modelBuffer, delegate }
+          : { modelAssetPath: TRACKER_MODEL_URL, delegate },
         runningMode: 'VIDEO',
         numFaces: 1,
         outputFacialTransformationMatrixes: true,
@@ -69,6 +73,7 @@ export class ArEngine {
     this.poseFilter = new PoseFilter();
     this.pose = { position: new THREE.Vector3(), quaternion: new THREE.Quaternion() };
     this.meshVisible = true;
+    this.mirrored = true;
     this.helmetToken = 0;
 
     this.#initThree();
@@ -194,6 +199,20 @@ export class ArEngine {
   setVisor(mode) { this.helmet?.userData.setVisor(mode); }
   setMeshVisible(v) { this.meshVisible = v; }
 
+  /** Selfie (front) camera is mirrored, the rear camera is not. Only affects snapshots here; the stage's CSS handles the live view. */
+  setMirrored(v) { this.mirrored = v; }
+
+  /** Call after swapping the camera stream: re-fit to the new frame size and restart tracking cleanly. */
+  onMediaChanged() {
+    this.#layout();
+    this.lastDetectTime = -1;
+    this.poseFilter.reset();
+    this.hasSmoothedLandmarks = false;
+    this.headAnchor.visible = false;
+    this.overlay.visible = false;
+    this.#setStatus('searching');
+  }
+
   // ---------- per frame ----------
 
   #loop = () => {
@@ -313,7 +332,7 @@ export class ArEngine {
 
   // ---------- snapshot ----------
 
-  /** Composite of the mirrored camera frame + the 3D layer, as a PNG blob. */
+  /** Composite of the camera frame (mirrored for the front camera) + the 3D layer, as a PNG blob. */
   snapshot({ includeMesh = false } = {}) {
     const { w, h } = this.mediaSize;
     const out = document.createElement('canvas');
@@ -323,8 +342,10 @@ export class ArEngine {
     const prevOverlay = this.overlay.visible;
     this.overlay.visible = prevOverlay && includeMesh;
     this.renderer.render(this.scene, this.camera); // draw now so the WebGL buffer is valid
-    ctx.translate(w, 0);
-    ctx.scale(-1, 1);
+    if (this.mirrored) {
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+    }
     ctx.drawImage(this.media, 0, 0, w, h);
     ctx.drawImage(this.canvas, 0, 0, w, h);
     this.overlay.visible = prevOverlay;

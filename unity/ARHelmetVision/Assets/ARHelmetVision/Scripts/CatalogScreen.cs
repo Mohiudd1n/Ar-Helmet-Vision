@@ -35,22 +35,22 @@ namespace ARHelmetVision
             var canvas = UIFactory.CreateCanvas();
             var root = UIFactory.SafeArea(canvas.transform);
 
-            UIFactory.Button("Back", root, "←", UIFactory.Panel, Color.white, 60, () => SceneManager.LoadScene(AppState.WelcomeScene))
+            UIFactory.Button("Back", root, "←", Color.white, UIFactory.Ink, 60, () => SceneManager.LoadScene(AppState.WelcomeScene), 60)
                 .GetComponent<RectTransform>().Place(new Vector2(0, 1), new Vector2(0, 1), new Vector2(50, -170), new Vector2(170, -50));
-            var title = UIFactory.Text("Title", root, "Helmet catalog", 56, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
+            var title = UIFactory.Text("Title", root, "Helmet catalog", 56, UIFactory.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
             title.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(200, -170), new Vector2(-50, -50));
 
             // Info panel
-            var panel = UIFactory.Image("Info", root, new Color(0.06f, 0.06f, 0.08f, 0.92f));
+            var panel = UIFactory.Image("Info", root, new Color(1f, 1f, 1f, 0.9f)).Rounded(64);
             panel.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(30, 30), new Vector2(-30, 830));
 
             _brand = UIFactory.Text("Brand", panel.transform, "", 40, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
             _brand.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(50, -110), new Vector2(-50, -40));
-            _model = UIFactory.Text("Model", panel.transform, "", 72, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
+            _model = UIFactory.Text("Model", panel.transform, "", 72, UIFactory.Ink, TextAnchor.MiddleLeft, FontStyle.Bold);
             _model.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(50, -210), new Vector2(-50, -110));
-            _category = UIFactory.Text("Category", panel.transform, "", 34, UIFactory.Muted);
+            _category = UIFactory.Text("Category", panel.transform, "", 34, UIFactory.InkMuted);
             _category.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(50, -270), new Vector2(-50, -210));
-            _tagline = UIFactory.Text("Tagline", panel.transform, "", 38, new Color(0.85f, 0.87f, 0.9f));
+            _tagline = UIFactory.Text("Tagline", panel.transform, "", 38, new Color(0.2f, 0.2f, 0.23f));
             _tagline.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(50, -380), new Vector2(-50, -270));
 
             // Brand tabs
@@ -59,15 +59,15 @@ namespace ARHelmetVision
             for (int i = 0; i < helmets.Length; i++)
             {
                 int idx = i;
-                var tab = UIFactory.Button($"Tab {helmets[i].brand}", panel.transform, helmets[i].brand, UIFactory.Panel, Color.white, 34, () => Show(idx));
+                var tab = UIFactory.Button($"Tab {helmets[i].brand}", panel.transform, helmets[i].brand, new Color(0f, 0f, 0f, 0.06f), UIFactory.Ink, 34, () => Show(idx), 50);
                 tab.GetComponent<RectTransform>().Place(new Vector2(w * i, 1), new Vector2(w * (i + 1), 1), new Vector2(12, -520), new Vector2(-12, -420));
                 _tabs.Add(tab);
             }
 
-            UIFactory.Button("TryOn", panel.transform, "Try on in AR", Color.white, Color.black, 52, () => SceneManager.LoadScene(AppState.TryOnScene))
+            UIFactory.Button("TryOn", panel.transform, "Try on in AR", UIFactory.Accent, Color.white, 52, () => SceneManager.LoadScene(AppState.TryOnScene), 75)
                 .GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(50, 110), new Vector2(-50, 260));
 
-            _credit = UIFactory.Text("Credit", panel.transform, "", 26, UIFactory.Muted, TextAnchor.MiddleCenter);
+            _credit = UIFactory.Text("Credit", panel.transform, "", 26, UIFactory.InkMuted, TextAnchor.MiddleCenter);
             _credit.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(50, 30), new Vector2(-50, 100));
         }
 
@@ -84,7 +84,11 @@ namespace ARHelmetVision
             _tagline.text = h.tagline;
             _credit.text = $"3D model by {h.creditAuthor} · {h.creditLicense}";
             for (int i = 0; i < _tabs.Count; i++)
-                _tabs[i].GetComponent<Image>().color = i == index ? new Color(1f, 1f, 1f, 0.3f) : UIFactory.Panel;
+            {
+                bool on = i == index;
+                _tabs[i].GetComponent<Image>().color = on ? UIFactory.Ink : new Color(0f, 0f, 0f, 0.06f);
+                _tabs[i].SetLabelColor(on ? Color.white : UIFactory.Ink);
+            }
 
             if (_shown) Destroy(_shown);
             if (!h.prefab) return;

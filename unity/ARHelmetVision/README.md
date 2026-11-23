@@ -1,10 +1,11 @@
-# HelmetVision AR — Unity app (Android / iOS)
+# HelmetAR — Unity app (Android / iOS)
 
 Native version of the web try-on, built with **Unity 6 + AR Foundation 6** (ARCore Augmented Faces on
 Android, ARKit face tracking on iOS). It uses the same real helmet models and the same calibrated
-fits as the web app, with the same three screens:
+fits as the web app, with the same three screens, preceded by a startup splash:
 
-1. **Welcome**: greeting by time of day and the user's saved name
+0. **Splash**: plays the "Made with Unity" clip (`Assets/StreamingAssets/madewithunity.mp4`), then fades into the Welcome screen. Tap to skip.
+1. **Welcome**: the HelmetAR landing page (grey gradient, helmet artwork with "Ride with Confidence" in its corner, one-line description, red-orange *Get started*)
 2. **Catalog**: the 4 brands (Axor, Scorpion, Elementza, Vertigo) on a 3D turntable
 3. **Try-On**: AR face tracking with the helmet on the head, a head occluder, the face mesh overlay always on top,
    S–XL sizes, visor modes, a fit calibration panel and screenshots
@@ -27,7 +28,7 @@ fits as the web app, with the same three screens:
      (glTFast imports them as prefabs)
    - creates the depth-mask, overlay-line and smoked-visor materials in `Resources/`
    - creates one `HelmetData` asset per helmet plus `Resources/HelmetCatalog.asset`, with the fits from `src/data/helmets.js`
-   - builds the AR face prefab and the scenes `01_Welcome`, `02_Catalog`, `03_TryOn`, and adds them to Build Settings
+   - builds the AR face prefab and the scenes `00_Splash`, `01_Welcome`, `02_Catalog`, `03_TryOn`, and adds them to Build Settings (Splash first, so the app starts there)
    - applies the mobile AR player settings (portrait; Android IL2CPP / ARM64 / GLES3 / API 24+; iOS 13+ with a camera usage text)
 4. **Project Settings ▸ XR Plug-in Management**: tick **ARCore** on the Android tab and **ARKit** on the iOS tab.
    Under **XR Plug-in Management ▸ ARKit**, turn on **Face Tracking**.
@@ -42,9 +43,10 @@ fits as the web app, with the same three screens:
 | Rig on each tracked face: occluders and helmet mount | `Scripts/FaceHelmetRig.cs` |
 | Face mesh overlay, always on top | `Scripts/FaceWireframe.cs` + `Shaders/OverlayLines.shader` |
 | Head occluder (depth only) | `Shaders/DepthMask.shader` (the live ARFace mesh, a skull ellipsoid and a neck cylinder) |
-| Screens | `Scripts/WelcomeScreen.cs`, `CatalogScreen.cs`, `TryOnScreen.cs` (UI is built in code by `UIFactory.cs`) |
+| Screens | `Scripts/SplashScreen.cs`, `Scripts/WelcomeScreen.cs`, `CatalogScreen.cs`, `TryOnScreen.cs` (UI is built in code by `UIFactory.cs`) |
 | Shared state between screens | `Scripts/AppState.cs` |
 | One-click setup | `Editor/ARHelmetVisionSetup.cs` |
+| Landing artwork import (Sprite, no cropping) | `Resources/UI/helmet-hero.png` + `Editor/UiTextureImporter.cs` |
 
 **Head space** is the MediaPipe / ARCore canonical face frame: origin at the centre of the head,
 +Y up, +Z out of the face, in centimetres in the catalog and metres in Unity. ARCore's face
@@ -62,8 +64,16 @@ faces backwards or sits a little high or low, tap **Fit** in the try-on screen:
 To change a helmet's own fit for everyone, edit its `HelmetData` asset (rotation, width in cm,
 centre in cm), or tune it in the web app's Fit Studio (`#/studio/<id>`) and copy the numbers over.
 
+## Updating from the previous design
+
+If you already ran *Set Up Everything*, run **Tools ▸ AR Helmet Vision ▸ 4. Build Scenes** (or *Set Up Everything*) again.
+It regenerates the scenes with the new `00_Splash` scene first in Build Settings and renames the app to HelmetAR.
+
 ## Troubleshooting
 
+- **Splash shows but the video doesn't play**: check that `Assets/StreamingAssets/madewithunity.mp4` exists and that the Video and Audio
+  built-in modules are enabled (they are listed in `Packages/manifest.json`). If the video fails, the app skips to the Welcome screen.
+- **Landing helmet image missing**: the PNG in `Resources/UI` must import as a Sprite; reimport it (right-click ▸ Reimport) so `UiTextureImporter` applies.
 - **Helmets are missing in the catalog**: run *Tools ▸ AR Helmet Vision ▸ 1. Import Helmet Models*, then
   *3. Create Helmet Catalog*. Check that glTFast is installed (Package Manager → *Unity glTFast*).
 - **Package version errors on open**: in Package Manager, update AR Foundation / ARCore / ARKit to

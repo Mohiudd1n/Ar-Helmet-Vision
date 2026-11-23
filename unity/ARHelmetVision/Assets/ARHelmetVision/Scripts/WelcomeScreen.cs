@@ -1,62 +1,79 @@
-using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace ARHelmetVision
 {
-    /// <summary>Screen 1: greets the user (time of day + saved name) and leads to the catalog.</summary>
+    /// <summary>
+    /// Screen 1: the HelmetAR landing page. Grey gradient background, the helmet artwork across the top with
+    /// "Ride with / Confidence" tucked into its empty bottom-left corner, a one-line description and a
+    /// red-orange GET STARTED button that opens the catalog.
+    /// </summary>
     public class WelcomeScreen : MonoBehaviour
     {
-        Text _hello;
+        const float HeroTextureAspectFallback = 408f / 612f;
 
         void Start()
         {
             var canvas = UIFactory.CreateCanvas();
-            var bg = UIFactory.Image("Background", canvas.transform, new Color(0.03f, 0.04f, 0.07f));
+
+            // Background gradient (dark grey at the top to light grey at the bottom).
+            var bg = UIFactory.Image("Background", canvas.transform, Color.white);
+            bg.sprite = UIFactory.VerticalGradient(
+                (0f, UIFactory.Hex("6f6f72")),
+                (0.30f, UIFactory.Hex("a9a9ac")),
+                (0.58f, UIFactory.Hex("dcdcde")),
+                (1f, UIFactory.Hex("ececee")));
+            bg.raycastTarget = false;
             bg.rectTransform.Place(Vector2.zero, Vector2.one);
+
+            // Canvas size in canvas units (CanvasScaler: reference 1080x1920, match 0.5).
+            float scale = Mathf.Pow(2f, Mathf.Lerp(Mathf.Log(Screen.width / 1080f, 2f), Mathf.Log(Screen.height / 1920f, 2f), 0.5f));
+            float canvasW = Screen.width / scale;
+            float canvasH = Screen.height / scale;
+
+            // Helmet artwork (Resources/UI/helmet-hero.png, imported as a Sprite by UiTextureImporter).
+            var heroSprite = Resources.Load<Sprite>("UI/helmet-hero");
+            float aspect = heroSprite ? heroSprite.rect.width / heroSprite.rect.height : HeroTextureAspectFallback;
+            float heroH = Mathf.Min(canvasW / aspect, canvasH * 0.68f);
+            float heroW = heroH * aspect;
+
+            var hero = UIFactory.Image("Helmet", canvas.transform, Color.white);
+            hero.sprite = heroSprite;
+            hero.enabled = heroSprite != null;
+            hero.raycastTarget = false;
+            var rt = hero.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.sizeDelta = new Vector2(heroW, heroH);
+            rt.anchoredPosition = Vector2.zero;
+
+            // Headline, in the helmet image's empty bottom-left corner (sizes scale with the artwork).
+            int big = Mathf.RoundToInt(heroW * 0.095f);
+            int light = Mathf.RoundToInt(heroW * 0.077f);
+            float left = heroW * 0.06f;
+            float baseY = heroH * 0.01f;
+
+            var confidence = UIFactory.Text("Confidence", hero.transform, "Confidence", big, UIFactory.Ink, TextAnchor.LowerLeft, FontStyle.Bold);
+            confidence.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(left, baseY), new Vector2(0, baseY + big * 1.3f));
+
+            var rideWith = UIFactory.Text("RideWith", hero.transform, "Ride with", light, new Color(0.43f, 0.43f, 0.45f), TextAnchor.LowerLeft, FontStyle.Normal);
+            rideWith.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(left, baseY + big * 1.2f), new Vector2(0, baseY + big * 1.2f + light * 1.3f));
+
             var root = UIFactory.SafeArea(canvas.transform);
 
-            var brand = UIFactory.Text("Brand", root, "HelmetVision  AR", 44, new Color(0.4f, 0.9f, 1f), TextAnchor.MiddleLeft, FontStyle.Bold);
-            brand.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(70, -170), new Vector2(-70, -80));
+            // Brand (top left)
+            var brand = UIFactory.Text("Brand", root, "HelmetAR", 56, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
+            brand.rectTransform.Place(new Vector2(0, 1), new Vector2(0.8f, 1), new Vector2(60, -170), new Vector2(0, -70));
 
-            var greet = UIFactory.Text("Greeting", root, Greeting() + ",", 52, UIFactory.Muted);
-            greet.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(70, -420), new Vector2(-70, -330));
+            // Description and call to action, at the bottom
+            var body = UIFactory.Text("Body", root, "Try real helmets on your own head, live through your camera.",
+                36, new Color(0.2f, 0.2f, 0.22f), TextAnchor.LowerLeft);
+            body.rectTransform.Place(new Vector2(0, 0), new Vector2(0.78f, 0), new Vector2(60, 295), new Vector2(0, 420));
 
-            _hello = UIFactory.Text("Name", root, "", 110, Color.white, TextAnchor.MiddleLeft, FontStyle.Bold);
-            _hello.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(70, -560), new Vector2(-70, -420));
-            RefreshName();
-
-            var body = UIFactory.Text("Body", root,
-                $"Find your next helmet. Try real 3D models from {AppState.Catalog.helmets.Length} brands on your own head, live through the front camera.",
-                44, new Color(0.85f, 0.87f, 0.9f));
-            body.rectTransform.Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(70, -820), new Vector2(-70, -600));
-
-            var nameField = UIFactory.Input("NameInput", root, AppState.UserName, "Your name (optional)", 46);
-            nameField.GetComponent<RectTransform>().Place(new Vector2(0, 1), new Vector2(1, 1), new Vector2(70, -1000), new Vector2(-70, -880));
-            nameField.onEndEdit.AddListener(v => { AppState.UserName = v.Trim(); RefreshName(); });
-
-            var go = UIFactory.Button("Explore", root, "Explore helmets  →", Color.white, Color.black, 54,
-                () => SceneManager.LoadScene(AppState.CatalogScene));
-            go.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(70, 120), new Vector2(-70, 290));
-
-            var note = UIFactory.Text("Privacy", root, "Camera images stay on your device.", 32, UIFactory.Muted, TextAnchor.MiddleCenter);
-            note.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(70, 40), new Vector2(-70, 110));
-        }
-
-        void RefreshName()
-        {
-            var n = AppState.UserName;
-            _hello.text = string.IsNullOrEmpty(n) ? "Rider" : n;
-        }
-
-        static string Greeting()
-        {
-            int h = DateTime.Now.Hour;
-            if (h < 5) return "Riding late";
-            if (h < 12) return "Good morning";
-            if (h < 17) return "Good afternoon";
-            return "Good evening";
+            var go = UIFactory.Button("Explore", root, "GET STARTED  →", UIFactory.Accent, Color.white, 46,
+                () => SceneManager.LoadScene(AppState.CatalogScene), 80);
+            go.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(60, 110), new Vector2(-60, 270));
         }
     }
 }

@@ -1,4 +1,4 @@
-# 🪖 AR Helmet Vision — Virtual Helmet Try-On
+# 🪖 HelmetAR — Virtual Helmet Try-On
 
 Try real branded helmets on your own head through the front camera. The project ships as two apps
 that share the same 3D models and the same calibrated fits:
@@ -11,7 +11,8 @@ that share the same 3D models and the same calibrated fits:
 
 ## Screens
 
-1. **Welcome**: greets the user by time of day, with an optional saved name and a spinning 3D helmet.
+0. **Splash**: plays the "Made with Unity" clip once (`public/madewithunity.mp4`), then opens the Welcome screen.
+1. **Welcome**: the HelmetAR landing page (helmet artwork, "Ride with Confidence", a one-line description and a Get started button).
 2. **Catalog**: 4 brands of real helmet models (Axor, Scorpion, Elementza, Vertigo) as live 3D
    turntables, with brand filters. Tap a helmet to try it on.
 3. **AR Try-On**: the helmet tracks your head with a face-mesh overlay that stays visible at every
@@ -61,6 +62,7 @@ certificate warning, and allow camera access.
 public/models/            real helmet .glb files (Sketchfab, see credits)
 scripts/copy-mediapipe.mjs   copies the matching MediaPipe WASM into public/ (runs before dev/build)
 src/App.jsx               hash router: #/  #/catalog  #/try/<id>  #/studio/<id>
+src/components/Splash.jsx   startup "Made with Unity" video
 src/screens/              WelcomeScreen, CatalogScreen, TryOnScreen, FitStudio
 src/components/HelmetPreview.jsx   live 3D turntables + thumbnails (one shared WebGL context)
 src/lib/                  arEngine, helmetLoader, headOccluder, faceTopology, canonicalFace, oneEuroFilter, camera
