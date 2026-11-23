@@ -17,6 +17,7 @@ namespace ARHelmetVision
         Text _title, _status, _credit;
         Button _meshBtn, _visorBtn;
         readonly List<Button> _helmetBtns = new();
+        ScrollRect _helmetStrip;
         GameObject _calibPanel;
         readonly List<Button> _sizeBtns = new();
 
@@ -69,21 +70,36 @@ namespace ARHelmetVision
                 _sizeBtns.Add(b);
             }
 
-            // Helmet switcher
+            // Helmet switcher: a swipeable strip, so every helmet in the catalog fits however many there are.
             var helmets = AppState.Catalog.helmets;
-            float w = 1f / Mathf.Max(1, helmets.Length);
+            _helmetStrip = UIFactory.HorizontalScroll("Helmet Strip", root);
+            _helmetStrip.GetComponent<RectTransform>().Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 160), new Vector2(0, 290));
             for (int i = 0; i < helmets.Length; i++)
             {
                 int idx = i;
-                var b = UIFactory.Button($"Helmet {helmets[i].brand}", root, helmets[i].brand, new Color(0, 0, 0, 0.55f), Color.white, 34, () => AppState.SelectedIndex = idx, 65);
-                b.GetComponent<RectTransform>().Place(new Vector2(w * i, 0), new Vector2(w * (i + 1), 0), new Vector2(12, 160), new Vector2(-12, 290));
+                var label = $"{helmets[i].brand}\n<size=22>{helmets[i].model}</size>";
+                var b = UIFactory.Button($"Helmet {helmets[i].id}", _helmetStrip.content, label, new Color(0, 0, 0, 0.55f), Color.white, 30, () => AppState.SelectedIndex = idx, 65);
+                var text = b.GetComponentInChildren<Text>();
+                text.supportRichText = true;
+                text.rectTransform.Place(Vector2.zero, Vector2.one, new Vector2(16, 6), new Vector2(-16, -6));
+                b.gameObject.AddComponent<LayoutElement>().preferredWidth = 270;
                 _helmetBtns.Add(b);
             }
+            Canvas.ForceUpdateCanvases();
+            ScrollToSelected();
 
             _credit = UIFactory.Text("Credit", root, "", 24, UIFactory.Muted, TextAnchor.MiddleCenter);
             _credit.rectTransform.Place(new Vector2(0, 0), new Vector2(1, 0), new Vector2(40, 60), new Vector2(-40, 130));
 
             BuildCalibration(root);
+        }
+
+        /// <summary>Scrolls the helmet strip so the helmet picked in the catalog is in view on entry.</summary>
+        void ScrollToSelected()
+        {
+            int n = _helmetBtns.Count;
+            if (!_helmetStrip || n <= 1) return;
+            _helmetStrip.horizontalNormalizedPosition = Mathf.Clamp01(AppState.SelectedIndex / (float)(n - 1));
         }
 
         Button SideButton(Transform root, string label, int slot, System.Action onClick)

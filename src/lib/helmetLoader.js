@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { cachedFetchBuffer } from './assetCache.js';
+import { createHelmetLiner } from './headOccluder.js';
 
 /**
  * Loads helmet .glb files once and hands out fitted clones.
@@ -73,6 +74,14 @@ export async function createFittedHelmet(helmet, { sizeScale = 1 } = {}) {
   const source = await loadHelmetScene(helmet.modelUrl);
   const model = source.clone(true);
 
+  // Drop meshes that aren't part of the helmet (ground planes, dangling straps) before
+  // measuring, so they neither show nor skew the bounding box used for scale and centre.
+  if (helmet.hide?.length) {
+    const drop = [];
+    model.traverse((o) => { if (o.isMesh && helmet.hide.includes(o.name)) drop.push(o); });
+    drop.forEach((o) => o.removeFromParent());
+  }
+
   const oriented = new THREE.Group();
   oriented.rotation.set(...helmet.fit.rotation);
   oriented.add(model);
@@ -92,6 +101,8 @@ export async function createFittedHelmet(helmet, { sizeScale = 1 } = {}) {
   fitted.name = `helmet:${helmet.id}`;
   fitted.add(scaled);
   scaled.position.set(...helmet.fit.center);
+  // Opt-in padded inner liner (in head space) so hair never shows through the eye port.
+  if (helmet.liner) fitted.add(createHelmetLiner(helmet.liner === true ? {} : helmet.liner));
   fitted.scale.setScalar(sizeScale);
 
   fitted.userData.dimensionsCm = size.clone().multiplyScalar(scale);

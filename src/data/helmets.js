@@ -8,6 +8,10 @@
  * Calibrated visually in the Fit Studio (#/studio/<id>) against the canonical head.
  *
  * `visor.meshes` names the visor meshes so the try-on can show them smoked or flipped up.
+ * `liner` adds a dark padded inner liner so hair doesn't show through the eye port ({ browY } for open faces).
+ *   New helmets are fitted to cover a head plus HAIR_VOLUME_CM of hair (orange guide + coverage readout in the Fit Studio).
+ * `hide` names meshes that aren't part of the helmet (ground planes, straps); they are removed before fitting.
+ * Mesh names are as three.js loads them (dots and spaces removed/replaced, e.g. `Sphere.001_0` -> `Sphere001_0`).
  * Licences: CC BY 4.0 models must show the credit (the catalog and try-on screens do).
  */
 
@@ -58,7 +62,8 @@ export const HELMETS = [
     accent: '#e11d48',
     modelUrl: '/models/helmet1.glb',
     sizeMb: 2.3,
-    fit: { rotation: [0, 0, 0], width: 26, center: [0, 1.0, -3.0] },
+    fit: { rotation: [0, -1.5708, 0], width: 26, center: [0, 3.5, -1.5] },
+    liner: true,
     visor: null,
     credit: {
       author: 'ANDRIANIAINAToky',
@@ -76,8 +81,9 @@ export const HELMETS = [
     accent: '#dc2626',
     modelUrl: '/models/helmet4.glb',
     sizeMb: 5.0,
-    fit: { rotation: [0, 0, 0], width: 25, center: [0, -0.3, -2.5] },
-    visor: { meshes: ['motorcycle_helmet_f3_1'], tint: '#0b0b0b' },
+    fit: { rotation: [0, 0, 0], width: 26.25, center: [0, 5.3, -4.7] },
+    liner: { browY: 6 },
+    visor: null,
     credit: {
       author: 'BasedOptimal',
       url: 'https://sketchfab.com/3d-models/elementza-bike-helmet-02cc6c3b10d14048b06a518bb6870c40',
@@ -94,7 +100,8 @@ export const HELMETS = [
     accent: '#10b981',
     modelUrl: '/models/helmet5.glb',
     sizeMb: 3.7,
-    fit: { rotation: [0, 0, 0], width: 26, center: [0, 1.2, -3.0] },
+    fit: { rotation: [0, 0, 0], width: 30, center: [0, 4.2, -2.3] },
+    liner: true,
     visor: null,
     credit: {
       author: 'chett33',
@@ -112,8 +119,9 @@ export const HELMETS = [
     accent: '#eab308',
     modelUrl: '/models/helmet6.glb',
     sizeMb: 10.0,
-    fit: { rotation: [0, 0, 0], width: 27, center: [0, 1.0, -2.5] },
-    visor: null,
+    fit: { rotation: [0, -1.5708, 0], width: 28.7, center: [0, 3.2, -3.8] },
+    liner: true,
+    visor: { meshes: ['Sphere008_bake_0'], tint: '#111111' },
     credit: {
       author: 'step4n',
       url: 'https://sketchfab.com/3d-models/f1-helmet-lando-norris-875ae397a4aa499dbd7d385e4d772c08',
@@ -130,7 +138,8 @@ export const HELMETS = [
     accent: '#f97316',
     modelUrl: '/models/helmet7.glb',
     sizeMb: 4.6,
-    fit: { rotation: [0, 0, 0], width: 27, center: [0, 1.5, -3.0] },
+    fit: { rotation: [0, 1.5708, 0], width: 28.75, center: [0, 1.5, -3] },
+    liner: true,
     visor: null,
     credit: {
       author: 'moto man 135',
@@ -148,8 +157,9 @@ export const HELMETS = [
     accent: '#d97706',
     modelUrl: '/models/helmet8.glb',
     sizeMb: 13.2,
-    fit: { rotation: [0, 0, 0], width: 26, center: [0, 0.5, -3.5] },
-    visor: null,
+    fit: { rotation: [0, -1.5708, 0], width: 26.15, center: [0, 2.3, -3.8] },
+    liner: true,
+    visor: { meshes: ['glass_PBR1_0'], tint: '#1a1a1a' },
     credit: {
       author: '13baym',
       url: 'https://sketchfab.com/3d-models/retro-motorcycle-helmet-8fc9219aecb6498981a905db1fddfcd5',
@@ -166,7 +176,8 @@ export const HELMETS = [
     accent: '#ef4444',
     modelUrl: '/models/helmet9.glb',
     sizeMb: 18.4,
-    fit: { rotation: [0, 0, 0], width: 26, center: [0, 1.0, -3.2] },
+    fit: { rotation: [0, 0, 0], width: 26, center: [0, 2, -3.2] },
+    liner: true,
     visor: null,
     credit: {
       author: 'Netovanniy',
@@ -184,8 +195,9 @@ export const HELMETS = [
     accent: '#06b6d4',
     modelUrl: '/models/helmet10.glb',
     sizeMb: 1.8,
-    fit: { rotation: [0, 0, 0], width: 26, center: [0, 0.8, -3.0] },
-    visor: null,
+    fit: { rotation: [0, 0, 0], width: 29.25, center: [0, 3.3, -3] },
+    liner: true,
+    visor: { meshes: ['Sphere001_0'], tint: '#111111' },
     credit: {
       author: 'djengala',
       url: 'https://sketchfab.com/3d-models/motorcycle-helmet-1d489db9cdc24161a7537926a20bb17b',
@@ -202,7 +214,9 @@ export const HELMETS = [
     accent: '#8b5cf6',
     modelUrl: '/models/helmet11.glb',
     sizeMb: 3.2,
-    fit: { rotation: [0, 0, 0], width: 25, center: [0, -1.5, -4.5] },
+    hide: ['CASCO001_tira_tela_0', 'CASCO001_13_CROMO004_0'],
+    fit: { rotation: [0, 0, 0], width: 25, center: [0, 1.3, -4.0] },
+    liner: true,
     visor: null,
     credit: {
       author: 'geovaniduran1',
@@ -220,8 +234,9 @@ export const HELMETS = [
     accent: '#3b82f6',
     modelUrl: '/models/helmet12.glb',
     sizeMb: 5.0,
-    fit: { rotation: [0, 0, 0], width: 26, center: [0, 0.5, -3.0] },
-    visor: { meshes: ['visor_2'], tint: '#111111' },
+    fit: { rotation: [0, 3.1416, 0], width: 26, center: [0, 2, -4] },
+    liner: true,
+    visor: { meshes: ['Object_8', 'Object_29'], tint: '#111111' },
     credit: {
       author: 'ramyouny',
       url: 'https://sketchfab.com/3d-models/motorcycle-helmet-racing-helmet-b2ead0381b914a88810a8be9fc13f47a',
@@ -238,7 +253,9 @@ export const HELMETS = [
     accent: '#ec4899',
     modelUrl: '/models/helmet13.glb',
     sizeMb: 1.1,
-    fit: { rotation: [0, 0, 0], width: 26, center: [0, 0.5, -3.0] },
+    hide: ['Plane002_Material005_0'],
+    fit: { rotation: [0, 1.5708, 0], width: 25, center: [0, 3.5, -2.3] },
+    liner: true,
     visor: null,
     credit: {
       author: 'MizuCorp',
@@ -256,8 +273,9 @@ export const HELMETS = [
     accent: '#14b8a6',
     modelUrl: '/models/helmet14.glb',
     sizeMb: 9.0,
-    fit: { rotation: [0, 0, 0], width: 27, center: [0, 1.0, -2.5] },
-    visor: null,
+    fit: { rotation: [0, 3.1416, 0], width: 28.05, center: [0, 3.1, -2.3] },
+    liner: true,
+    visor: { meshes: ['Helmet_glass_Helmet_glass_0'], tint: '#111111' },
     credit: {
       author: 'Miopass',
       url: 'https://sketchfab.com/3d-models/f1-helmet-zhouguanyu-chinesegp-helmet-31f9f2c1e83c4eac9f444d73a853b2a9',

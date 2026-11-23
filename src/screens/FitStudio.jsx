@@ -5,7 +5,8 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { HELMETS, getHelmet } from '../data/helmets.js';
 import { createFittedHelmet } from '../lib/helmetLoader.js';
-import { createHeadOccluder } from '../lib/headOccluder.js';
+import { createHeadOccluder, SKULL, HAIR_VOLUME_CM } from '../lib/headOccluder.js';
+import { sampleHelmet, scoreFit, describeScore, autoFitHair } from '../lib/hairCoverage.js';
 import { CANONICAL_FACE_VERTICES } from '../lib/canonicalFace.js';
 
 /**
@@ -18,6 +19,7 @@ export default function FitStudio({ helmetId, navigate }) {
   const ctx = useRef({});
   const [helmet, setHelmet] = useState(() => structuredClone(getHelmet(helmetId) || HELMETS[0]));
   const [info, setInfo] = useState('');
+  const [coverage, setCoverage] = useState('');
   const [showOccluder, setShowOccluder] = useState(true);
   const [xray, setXray] = useState(false);
 
@@ -51,6 +53,14 @@ export default function FitStudio({ helmetId, navigate }) {
     scene.add(face);
 
     const occluder = createHeadOccluder({ debug: true });
+    // Hair volume guide (orange): the helmet's outer shell must cover this, or hair pokes out.
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 32, 20),
+      new THREE.MeshBasicMaterial({ color: 0xf97316, wireframe: true, transparent: true, opacity: 0.35 })
+    );
+    hair.position.set(...SKULL.center);
+    hair.scale.set(...SKULL.radii.map((r) => r + HAIR_VOLUME_CM));
+    occluder.add(hair);
     scene.add(occluder);
     scene.add(new THREE.AxesHelper(20));
     const grid = new THREE.GridHelper(80, 16, 0x333333, 0x222222);
@@ -97,6 +107,10 @@ export default function FitStudio({ helmetId, navigate }) {
       holder.add(fitted);
       const d = fitted.userData.dimensionsCm;
       setInfo(`shell ${d.x.toFixed(1)} W × ${d.y.toFixed(1)} H × ${d.z.toFixed(1)} D cm`);
+      const sample = sampleHelmet(fitted, helmet.visor?.meshes || []);
+      ctx.current.sample = sample;
+      ctx.current.fit = helmet.fit;
+      setCoverage(describeScore(scoreFit(sample, new THREE.Vector3(...helmet.fit.center))));
     });
     return () => { cancelled = true; };
   }, [helmet]);
@@ -113,6 +127,14 @@ export default function FitStudio({ helmetId, navigate }) {
     window.__studioView = setView;
     window.__studioOccluder = setShowOccluder;
     window.__studioXray = setXray;
+    // Hair coverage: __studioCoverage() reads the current score; __studioAutoHair() finds and applies
+    // the smallest fit change that covers the hair with the eyes still clear.
+    window.__studioCoverage = () => describeScore(scoreFit(ctx.current.sample, new THREE.Vector3(...ctx.current.fit.center)));
+    window.__studioAutoHair = (opts) => {
+      const { fit, score } = autoFitHair(ctx.current.sample, ctx.current.fit, opts);
+      setHelmet((h) => ({ ...h, fit: structuredClone(fit) }));
+      return { fit, summary: describeScore(score) };
+    };
   }, []);
 
   // X-ray: draw the helmet see-through so the head inside is visible.
@@ -166,6 +188,7 @@ export default function FitStudio({ helmetId, navigate }) {
           {HELMETS.map((h) => <option key={h.id} value={h.id}>{h.brand} {h.model}</option>)}
         </select>
         <p className="text-[11px] text-zinc-400">{info}</p>
+        <p className="text-[11px] text-orange-300">{coverage}</p>
         <div className="flex gap-1 flex-wrap">
           {[['Front', [0, 2, 80]], ['Side', [80, 2, -3]], ['Top', [0, 80, -2]], ['3/4', [45, 10, 70]]].map(([n, p]) => (
             <button key={n} onClick={() => setView(p)} className="px-2 py-1 bg-zinc-800 rounded text-xs">{n}</button>

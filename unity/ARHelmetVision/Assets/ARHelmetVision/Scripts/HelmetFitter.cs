@@ -27,6 +27,11 @@ namespace ARHelmetVision
             model.transform.localRotation = Quaternion.identity;
             model.transform.localScale = Vector3.one;
 
+            // Drop parts that aren't the helmet (ground planes, straps) so they neither show
+            // nor skew the bounds; inactive renderers are skipped by LocalBounds below.
+            foreach (var r in model.GetComponentsInChildren<Renderer>())
+                if (MeshNames.MatchesAny(r.gameObject.name, data.hiddenMeshPrefixes)) r.gameObject.SetActive(false);
+
             // Measure in the root's local frame (root may already be under a moving parent).
             var bounds = LocalBounds(root, model);
             float scale = (data.fitWidthCm / 100f) / Mathf.Max(bounds.size.x, 1e-5f);
@@ -68,6 +73,34 @@ namespace ARHelmetVision
         }
     }
 
+    /// <summary>
+    /// Mesh-name matching shared with the web app's helmets.js. three.js loads names with
+    /// whitespace turned into '_' and '.', ':', '/', '[', ']' removed (e.g. "Sphere.001_0" ->
+    /// "Sphere001_0"); glTFast keeps the raw names. Both sides are normalised the same way,
+    /// so one list of names works in both apps.
+    /// </summary>
+    public static class MeshNames
+    {
+        public static string Normalize(string name)
+        {
+            var sb = new System.Text.StringBuilder(name.Length);
+            foreach (var c in name)
+            {
+                if (char.IsWhiteSpace(c)) sb.Append('_');
+                else if (c != '.' && c != ':' && c != '/' && c != '[' && c != ']') sb.Append(c);
+            }
+            return sb.ToString();
+        }
+
+        public static bool MatchesAny(string name, string[] prefixes)
+        {
+            if (prefixes == null) return false;
+            var n = Normalize(name);
+            foreach (var p in prefixes) if (!string.IsNullOrEmpty(p) && n.StartsWith(Normalize(p))) return true;
+            return false;
+        }
+    }
+
     /// <summary>A fitted helmet instance with visor controls.</summary>
     public class FittedHelmet
     {
@@ -82,7 +115,7 @@ namespace ARHelmetVision
             var smokedTemplate = Resources.Load<Material>("ARHV_SmokedVisor");
             foreach (var r in model.GetComponentsInChildren<Renderer>(true))
             {
-                if (!MatchesAny(r.gameObject.name, data.visorMeshPrefixes)) continue;
+                if (!MeshNames.MatchesAny(r.gameObject.name, data.visorMeshPrefixes)) continue;
                 var original = r.sharedMaterials;
                 var smoked = new Material[original.Length];
                 for (int i = 0; i < smoked.Length; i++)
@@ -92,12 +125,6 @@ namespace ARHelmetVision
                 }
                 _visors.Add((r, original, smoked));
             }
-        }
-
-        static bool MatchesAny(string name, string[] prefixes)
-        {
-            foreach (var p in prefixes) if (!string.IsNullOrEmpty(p) && name.StartsWith(p)) return true;
-            return false;
         }
 
         public void SetVisor(VisorMode mode)

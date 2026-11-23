@@ -35,6 +35,10 @@ namespace ARHelmetVision
         public string[] visorMeshPrefixes = new string[0];
         public Color visorTint = new Color(0.05f, 0.05f, 0.06f, 0.45f);
 
+        [Header("Hidden parts")]
+        [Tooltip("Name prefixes of meshes that aren't part of the helmet (ground planes, straps). Removed before fitting.")]
+        public string[] hiddenMeshPrefixes = new string[0];
+
         [Header("Credit (shown in the app)")]
         public string creditAuthor;
         public string creditLicense;

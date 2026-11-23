@@ -74,3 +74,56 @@ export function createHeadOccluder({ debug = false } = {}) {
   }
   return group;
 }
+
+/** Hair volume around the skull (cm). Helmet shells must cover this, or hair pokes out. */
+export const HAIR_VOLUME_CM = 3; // thick hair: shells must reach ~3 cm past the skull
+const FACE_CUT_Z = -1.5; // liner is open in front of this depth (cm) below the brow line
+
+/**
+ * Dark padded comfort liner, like the EPS/foam lining of a real helmet.
+ * A visible (not depth-only) cap just outside the skull, open in front of the face
+ * below `browY` and cut off below `bottomY`. Through the eye port you see padding
+ * on the forehead, temples and around the ears instead of the user's hair.
+ * It sits inside the shell, so from outside the shell hides it.
+ */
+export function createHelmetLiner({ browY = 4.6, bottomY = -3, thicknessCm = 1.2, color = 0x17171a } = {}) {
+  const sphere = new THREE.SphereGeometry(1, 64, 40).toNonIndexed();
+  const pos = sphere.attributes.position;
+  const radii = SKULL.radii.map((r) => r + thicknessCm);
+  const kept = [];
+  const v = new THREE.Vector3();
+  const tri = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+  for (let i = 0; i < pos.count; i += 3) {
+    for (let k = 0; k < 3; k++) {
+      v.fromBufferAttribute(pos, i + k);
+      tri[k].set(v.x * radii[0] + SKULL.center[0], v.y * radii[1] + SKULL.center[1], v.z * radii[2] + SKULL.center[2]);
+    }
+    // Coarse cut here (whole triangles well inside the face opening / below the rim);
+    // the exact, smooth edge is cut per pixel in the shader below.
+    const maxY = Math.max(tri[0].y, tri[1].y, tri[2].y);
+    const minZ = Math.min(tri[0].z, tri[1].z, tri[2].z);
+    if (maxY < bottomY || (maxY < browY && minZ > FACE_CUT_Z)) continue;
+    for (const p of tri) kept.push(p.x, p.y, p.z);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(kept, 3));
+  geo.computeVertexNormals();
+
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.95, metalness: 0, side: THREE.DoubleSide });
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uBrowY = { value: browY };
+    shader.uniforms.uBottomY = { value: bottomY };
+    shader.uniforms.uFaceCutZ = { value: FACE_CUT_Z };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vHeadPos;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvHeadPos = position;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vHeadPos;\nuniform float uBrowY;\nuniform float uBottomY;\nuniform float uFaceCutZ;')
+      .replace('void main() {', 'void main() {\n  if (vHeadPos.y < uBottomY || (vHeadPos.y < uBrowY && vHeadPos.z > uFaceCutZ)) discard;');
+  };
+  mat.customProgramCacheKey = () => `liner:${browY}:${bottomY}`;
+  const liner = new THREE.Mesh(geo, mat);
+  liner.name = 'helmet-liner';
+  liner.frustumCulled = false;
+  return liner;
+}

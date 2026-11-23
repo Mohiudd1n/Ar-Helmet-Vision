@@ -174,6 +174,44 @@ namespace ARHelmetVision
             return btn;
         }
 
+        /// <summary>
+        /// Horizontally scrolling strip (swipe left/right). Place the returned ScrollRect's RectTransform,
+        /// then add children to <c>scroll.content</c>; give each one a LayoutElement with a preferred width.
+        /// </summary>
+        public static ScrollRect HorizontalScroll(string name, Transform parent, float spacing = 16f, int padding = 12)
+        {
+            var rt = Rect(name, parent);
+            var scroll = rt.gameObject.AddComponent<ScrollRect>();
+            scroll.horizontal = true;
+            scroll.vertical = false;
+            scroll.movementType = ScrollRect.MovementType.Elastic;
+            scroll.scrollSensitivity = 30f;
+
+            var viewport = Rect("Viewport", rt).Place(Vector2.zero, Vector2.one);
+            viewport.gameObject.AddComponent<RectMask2D>();
+            // A transparent graphic so drags anywhere in the strip (not only on buttons) scroll it.
+            viewport.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0);
+
+            var content = Rect("Content", viewport);
+            content.anchorMin = new Vector2(0, 0);
+            content.anchorMax = new Vector2(0, 1);
+            content.pivot = new Vector2(0, 0.5f);
+            content.offsetMin = content.offsetMax = Vector2.zero;
+            var row = content.gameObject.AddComponent<HorizontalLayoutGroup>();
+            row.spacing = spacing;
+            row.padding = new RectOffset(padding, padding, 0, 0);
+            row.childAlignment = TextAnchor.MiddleLeft;
+            row.childControlWidth = true;
+            row.childControlHeight = true;
+            row.childForceExpandWidth = false;
+            row.childForceExpandHeight = true;
+            content.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            scroll.viewport = viewport;
+            scroll.content = content;
+            return scroll;
+        }
+
         public static void SetLabel(this Button b, string text) => b.GetComponentInChildren<Text>().text = text;
 
         public static void SetLabelColor(this Button b, Color color) => b.GetComponentInChildren<Text>().color = color;
