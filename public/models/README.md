@@ -10,10 +10,8 @@ Real helmet models downloaded from Sketchfab (credits in `src/data/helmets.js` a
 | `helmet4.glb` | Elementza Racer Full-Face | CC BY 4.0 |
 | `helmet5.glb` | Fox Racing Full Face MTB | CC BY 4.0 |
 | `helmet6.glb` | Bell HP77 F1 Lando Norris | CC BY-NC-ND 4.0 |
-| `helmet7.glb` | Fox Racing V3 MX & 100% Goggles | CC BY 4.0 |
 | `helmet8.glb` | Biltwell Gringo Retro | CC BY-NC 4.0 |
 | `helmet9.glb` | Bell Moto-3 Classic | CC BY 4.0 |
-| `helmet10.glb` | AGV Corsa GP | CC BY 4.0 |
 | `helmet11.glb` | Torc Route 66 Vintage | CC BY 4.0 |
 | `helmet12.glb` | Shoei X-Spirit Racing | Sketchfab Standard |
 | `helmet13.glb` | Arai GP-6S Track | CC BY 4.0 |
